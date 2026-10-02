@@ -1,98 +1,127 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from "expo-router";
+import { SymbolView } from "expo-symbols";
+import { useState } from "react";
+import { View } from "react-native";
+import {
+  Action,
+  Expand,
+  KoalaMessage,
+  Muted,
+  Screen,
+  Title,
+} from "@/components/coach-ui";
+import { Button } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
+import { MODES, type Mode } from "@/domain/practice";
+import { usePractice } from "@/state/practice";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+export default function Home() {
+  const { state, recording } = usePractice();
+  const [mode, setMode] = useState<Mode>("interview");
+  const completed = state.attempts.filter(
+    (a) => a.status === "ready" && a.analysis,
+  );
+  const recent = state.attempts[0];
+  const sessionAttempt = state.attempts.find(
+    (a) => a.session.id === state.session?.id,
+  );
+  const continueAttempt =
+    sessionAttempt ?? (!state.session ? recent : undefined);
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <Screen back={false}>
+      <Title botanical>Choose a practice</Title>
+      <KoalaMessage>
+        {recording
+          ? "Still recording. I’m all ears."
+          : mode === "impromptu"
+            ? "What can you teach me today?"
+            : mode === "rehearse"
+              ? "Go on. I’m all ears."
+              : "Want to run through a few questions?"}
+      </KoalaMessage>
+      {(state.session || recent) && (
+        <Action
+          variant="secondary"
+          onPress={() =>
+            router.push(
+              recording || !continueAttempt
+                ? "/practice"
+                : {
+                    pathname: "/results/[id]",
+                    params: { id: continueAttempt.id },
+                  },
+            )
+          }
+        >
+          {recording
+            ? "Return to recording"
+            : state.session
+              ? "Continue practice"
+              : "View latest feedback"}
+        </Action>
+      )}
+      <View
+        className="gap-3"
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Practice mode"
+      >
+        {(Object.keys(MODES) as Mode[]).map((m) => {
+          const selected = mode === m;
+          return (
+            <Button
+              key={m}
+              variant="outline"
+              disabled={recording}
+              role="radio"
+              aria-checked={selected}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected, disabled: recording }}
+              accessibilityLabel={`${MODES[m].label}. ${MODES[m].description}`}
+              onPress={() => setMode(m)}
+              className={`h-auto min-h-24 justify-between gap-4 rounded-2xl border-2 p-5 shadow-none ${selected ? "border-primary bg-secondary" : "border-border bg-white"}`}
+            >
+              <View className="flex-1 gap-1">
+                <Text className="text-lg font-bold">{MODES[m].label}</Text>
+                <Text className="text-sm leading-5 text-muted-foreground">
+                  {MODES[m].description}
+                </Text>
+              </View>
+              <SymbolView
+                name={{
+                  ios: selected ? "checkmark.circle.fill" : "circle",
+                  android: selected ? "check_circle" : "radio_button_unchecked",
+                  web: selected ? "check_circle" : "radio_button_unchecked",
+                }}
+                size={24}
+                tintColor={selected ? "#347553" : "#8A8F8C"}
+              />
+            </Button>
+          );
+        })}
+      </View>
+      <Action
+        disabled={recording}
+        onPress={() => router.push({ pathname: "/setup", params: { mode } })}
+      >{`Practice ${MODES[mode].label.toLowerCase()}`}</Action>
+      {completed.length > 0 && (
+        <View className="flex-row items-center justify-between border-t border-border pt-4">
+          <Muted>
+            {completed.length}{" "}
+            {completed.length === 1
+              ? "practice completed"
+              : "practices completed"}
+          </Muted>
+          <Action variant="ghost" onPress={() => router.push("/history")}>
+            View progress
+          </Action>
+        </View>
+      )}
+      <Expand title="About your recordings">
+        <Muted>
+          Recordings and history are saved on this device. Audio is sent to
+          cloud AI for feedback. No account required.
+        </Muted>
+      </Expand>
+    </Screen>
   );
 }
-
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});

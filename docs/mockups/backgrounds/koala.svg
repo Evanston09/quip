@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">Koala speaking coach</title>
+  <desc id="description">Original friendly slate-grey koala. Named groups use local joint origins for animation. Left and right refer to the viewer.</desc>
+  <g id="shadow"><ellipse cx="256" cy="461" rx="110" ry="14" fill="#223C46" opacity=".09"/></g>
+  <g id="character" transform="translate(256 440)">
+    <g id="leg-left" transform="translate(-48 -39)">
+      <path d="M-26-19C-39-7-44 24-34 36C-24 47 18 44 28 35C36 24 24-10 14-20Z" fill="#788F99"/>
+      <ellipse cx="-7" cy="30" rx="29" ry="12" fill="#A4B7BC"/>
+    </g>
+    <g id="leg-right" transform="translate(48 -39)">
+      <path d="M26-19C39-7 44 24 34 36C24 47-18 44-28 35C-36 24-24-10-14-20Z" fill="#788F99"/>
+      <ellipse cx="7" cy="30" rx="29" ry="12" fill="#A4B7BC"/>
+    </g>
+    <g id="torso" transform="translate(0 -126)">
+      <path d="M-74-27C-92 7-100 69-70 98C-42 122 42 122 70 98C100 69 92 7 74-27C52-60-52-60-74-27Z" fill="#8EA5AE"/>
+      <ellipse cx="0" cy="50" rx="56" ry="57" fill="#DDE7E5"/>
+    </g>
+    <g id="arm-left" transform="translate(-60 -153)">
+      <path d="M8-19C-15-22-39-1-46 27C-52 49-50 69-38 76C-27 83-13 76-10 63C-5 44 9 24 20 11C27 1 23-14 8-19Z" fill="#8EA5AE"/>
+      <path d="M-38 64L-36 71M-28 63L-27 70" stroke="#657F89" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <g id="arm-right" transform="translate(60 -153)">
+      <path d="M-8-19C15-22 39-1 46 27C52 49 50 69 38 76C27 83 13 76 10 63C5 44-9 24-20 11C-27 1-23-14-8-19Z" fill="#8EA5AE"/>
+      <path d="M38 64L36 71M28 63L27 70" stroke="#657F89" stroke-width="4" stroke-linecap="round"/>
+</g>
+    <g id="head" transform="translate(0 -176)">
+      <g id="ear-left" transform="translate(-97 -112)">
+        <path d="M24-40C-1-69-49-54-60-22C-74 16-43 53-7 43C19 35 39-14 24-40Z" fill="#8EA5AE"/>
+        <path d="M9-27C-11-43-36-27-37-6C-38 15-19 30 0 18C13 9 21-14 9-27Z" fill="#D7C4C5"/>
+      </g>
+      <g id="ear-right" transform="translate(97 -112)">
+        <path d="M-24-40C1-69 49-54 60-22C74 16 43 53 7 43C-19 35-39-14-24-40Z" fill="#8EA5AE"/>
+        <path d="M-9-27C11-43 36-27 37-6C38 15 19 30 0 18C-13 9-21-14-9-27Z" fill="#D7C4C5"/>
+      </g>
+      <g id="face">
+        <path d="M-112-95C-111-153-65-185 0-180C65-185 111-153 112-95C124-28 77 10 0 10C-77 10-124-28-112-95Z" fill="#A4B7BC"/>
+        <path d="M-36-171L-20-195L-5-181L11-196L25-174" fill="#A4B7BC"/>
+        <ellipse cx="0" cy="-46" rx="66" ry="42" fill="#DDE7E5"/>
+      </g>
+      <g id="brow-left" transform="translate(-49 -104)"><path d="M-11 0Q0-7 11-2" stroke="#657F89" stroke-width="5" stroke-linecap="round"/></g>
+      <g id="brow-right" transform="translate(49 -104)"><path d="M-11-2Q0-7 11 0" stroke="#657F89" stroke-width="5" stroke-linecap="round"/></g>
+      <g id="eye-left" transform="translate(-48 -80)">
+        <ellipse rx="9" ry="12" fill="#233B46"/><circle cx="3" cy="-4" r="3" fill="#FFF"/>
+      </g>
+      <g id="eye-right" transform="translate(48 -80)">
+        <ellipse rx="9" ry="12" fill="#233B46"/><circle cx="3" cy="-4" r="3" fill="#FFF"/>
+      </g>
+      <g id="cheeks" fill="#D6ACAC" opacity=".65"><ellipse cx="-72" cy="-55" rx="14" ry="8"/><ellipse cx="72" cy="-55" rx="14" ry="8"/></g>
+      <g id="nose" transform="translate(0 -67)">
+        <path d="M-23-17C-17-34 17-34 23-17L28 8C31 31-31 31-28 8Z" fill="#233B46"/>
+        <path d="M-13-15Q-7-23 2-21" stroke="#48606A" stroke-width="6" stroke-linecap="round"/>
+      </g>
+      <g id="mouth" transform="translate(0 -29)"><path d="M-17-3Q0 12 17-3" stroke="#233B46" stroke-width="5" stroke-linecap="round"/></g>
+    </g>
+  </g>
+</svg>

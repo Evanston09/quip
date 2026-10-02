@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f5ef">
+  <title>Speaking Coach · Background experiments</title>
+  <style>
+    @font-face { font-family: Nunito; src: url('./nunito-regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+    @font-face { font-family: Nunito; src: url('./nunito-bold.ttf') format('truetype'); font-weight: 600 900; font-display: swap; }
+    * { box-sizing: border-box; }
+    :root { font-family: Nunito, sans-serif; color: #24332c; background: #eceee9; accent-color: #347553; }
+    body { margin: 0; }
+    button, input { font: inherit; }
+    button { cursor: pointer; color: inherit; }
+    button:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid #347553; outline-offset: 4px; }
+    ::selection { background: #c9e0ce; color: #1e3829; }
+    .layout { max-width: 1100px; margin: auto; padding: 48px 32px; display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 72px; align-items: start; }
+    .controls { position: sticky; top: 40px; }
+    h1 { font-size: 30px; line-height: 1.15; letter-spacing: -.025em; margin: 0 0 12px; }
+    .intro { color: #536159; font-size: 16px; line-height: 1.55; margin: 0 0 28px; }
+    .variants { display: flex; flex-direction: column; gap: 6px; }
+    .variant { display: flex; align-items: center; gap: 13px; min-height: 52px; border: 1px solid transparent; border-radius: 12px; padding: 10px 12px; background: transparent; text-align: left; font-weight: 700; }
+    .variant:hover { background: #e0e5dd; }
+    .variant[aria-pressed="true"] { background: #fff; border-color: #abb9aa; }
+    .swatch { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #c8cec5; flex-shrink: 0; background: var(--swatch); }
+    .variant[data-theme="welcome"] .swatch, .variant[data-theme="recommended"] .swatch { background: linear-gradient(#e5eedf 50%, #f7f5ef 50%); }
+    .variant[data-theme="botanical"] .swatch { background: #fafcfb url('./botanical-leaf.svg') no-repeat center / auto 23px; }
+    .recommended-label { font-size: 11px; background: #e4eee1; padding: 3px 6px; border-radius: 5px; margin-left: auto; color: #31533a; }
+    .description { margin: 22px 0 18px; min-height: 72px; color: #536159; font-size: 15px; line-height: 1.5; }
+    .compare { width: 100%; min-height: 44px; border: 1px solid #b0bcb0; border-radius: 10px; font-weight: 700; background: transparent; }
+    .compare:hover { background: #dde4d9; }
+    .compare[aria-pressed="true"] { background: #fff; }
+    .size-control { display: flex; align-items: center; gap: 12px; margin: 22px 0 10px; font-size: 14px; }
+    .size-control input { width: 100%; min-width: 0; }
+    .note { color: #59665e; font-size: 13px; line-height: 1.5; margin-top: 24px; }
+    .stage { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .phone { --canvas: #f7f5ef; --line: #dbdfd3; --hero: #e5eedf; width: min(var(--phone-width, 390px), 100%); border: 7px solid #26332c; border-radius: 40px; overflow: hidden; background: var(--canvas); box-shadow: 0 18px 48px rgba(24,42,28,.13); }
+    .screen { position: relative; isolation: isolate; min-height: 790px; background: var(--canvas); }
+    .screen::before { content: ''; position: absolute; inset: 0; background-image: var(--texture, none); opacity: .055; z-index: -1; pointer-events: none; }
+    .phone[data-theme="original"] { --canvas: #fff; --line: #e5e5e5; --hero: transparent; }
+    .phone[data-theme="paper"] { --hero: transparent; }
+    .phone[data-theme="eucalyptus"] { --canvas: #f0f5ef; --line: #d6e0d3; --hero: transparent; }
+    .phone[data-theme="welcome"] { --canvas: #fff; --line: #d8dfd5; }
+    .phone[data-theme="botanical"] { --canvas: #fafcfb; --line: #dce4df; --hero: transparent; }
+    .phone[data-theme="texture"] { --hero: transparent; }
+    .status { display: flex; justify-content: space-between; align-items: center; height: 37px; padding: 12px 24px 0; font-size: 13px; font-weight: 700; }
+    .status svg { width: 55px; height: 14px; }
+    .app-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 62px; padding: 0 21px; position: relative; z-index: 2; }
+    .brand { font-size: 17px; font-weight: 800; white-space: nowrap; }
+    .header-actions { display: flex; align-items: center; }
+    .plain { background: transparent; border: none; font-weight: 700; padding: 12px 6px; min-height: 44px; }
+    .account { padding-left: 9px; }
+    .account svg { display: block; width: 24px; height: 24px; color: #3d705b; }
+    .welcome { padding: 13px 23px 26px; position: relative; background: var(--hero); }
+    .phone[data-theme="recommended"] .welcome, .phone[data-theme="welcome"] .welcome { border-radius: 0 0 28px 28px; padding-top: 17px; padding-bottom: 28px; }
+    h2 { font-size: 24px; letter-spacing: -.025em; line-height: 1.25; margin: 0 0 20px; font-weight: 800; position: relative; }
+    .greeting { display: flex; gap: 12px; align-items: center; position: relative; }
+    .koala { width: 86px; height: 86px; flex-shrink: 0; }
+    .bubble { background: white; border: 2px solid var(--line); border-radius: 16px; min-height: 83px; flex: 1; padding: 15px 13px; position: relative; font-size: 16px; line-height: 1.4; font-weight: 700; }
+    .bubble::before { content: ''; position: absolute; left: -8px; top: 30px; width: 12px; height: 12px; background: #fff; border-left: 2px solid var(--line); border-bottom: 2px solid var(--line); transform: rotate(45deg); }
+    .leaves { display: none; position: absolute; right: -8px; top: 0; width: 90px; height: 125px; object-fit: contain; opacity: .55; transform: rotate(-18deg); pointer-events: none; }
+    .phone[data-theme="botanical"] .leaves { display: block; }
+    .phone[data-theme="botanical"] .welcome h2 { max-width: calc(100% - 54px); }
+    .content { padding: 0 23px 27px; }
+    .phone[data-theme="recommended"] .content, .phone[data-theme="welcome"] .content { padding-top: 24px; }
+    .modes { display: flex; flex-direction: column; gap: 12px; margin: 0 0 21px; padding: 0; border: 0; }
+    .mode { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 100px; padding: 17px 18px; border: 2px solid var(--line); border-radius: 16px; background: #fff; text-align: left; }
+    .mode:hover { border-color: #94ae96; }
+    .mode[aria-checked="true"] { border-color: #347553; background: #edf6ef; }
+    .mode-copy { flex: 1; }
+    .mode-name { display: block; font-size: 18px; font-weight: 800; margin-bottom: 3px; }
+    .mode-description { display: block; font-size: 14px; line-height: 1.45; color: #646d66; }
+    .radio { width: 22px; height: 22px; border: 2px solid #8a8f8c; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+    .radio svg { display: none; width: 14px; height: 14px; }
+    .mode[aria-checked="true"] .radio { background: #347553; border-color: #347553; color: white; }
+    .mode[aria-checked="true"] .radio svg { display: block; }
+    .practice { background: #347553; color: #fff; width: 100%; min-height: 50px; border: 0; border-radius: 16px; padding: 12px 16px; font-size: 16px; font-weight: 800; }
+    .practice:hover { background: #2a6043; }
+    .practice:active { transform: translateY(1px); }
+    .preview-message { color: #3a5742; background: #e4eee1; padding: 12px; border-radius: 10px; font-size: 14px; line-height: 1.5; margin: 14px 0 0; }
+    [hidden] { display: none !important; }
+    details { margin-top: 16px; }
+    summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 50px; cursor: pointer; list-style: none; font-size: 14px; font-weight: 700; }
+    summary::-webkit-details-marker { display: none; }
+    summary svg { width: 16px; height: 16px; }
+    details[open] summary svg { transform: rotate(180deg); }
+    details p { color: #626b65; line-height: 1.65; font-size: 14px; margin: 2px 0 14px; }
+    .home-bar { height: 5px; width: 110px; border-radius: 3px; background: #26332c; margin: 13px auto 0; }
+    .caption { color: #536159; font-size: 13px; margin: 0; text-align: center; }
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 260px minmax(0, 1fr); gap: 28px; padding: 28px 20px; }
+      h1 { font-size: 26px; }
+    }
+    @media (max-width: 620px) {
+      .layout { display: block; padding: 20px 12px 28px; }
+      .controls { position: static; }
+      h1 { font-size: 25px; margin-bottom: 8px; }
+      .intro { font-size: 14px; margin-bottom: 14px; }
+      .variants { flex-direction: row; overflow-x: auto; padding: 3px 2px 8px; scrollbar-width: thin; scrollbar-color: #aebda9 transparent; }
+      .variant { white-space: nowrap; padding: 8px 10px; min-height: 44px; flex-shrink: 0; font-size: 14px; }
+      .swatch { width: 22px; height: 22px; }
+      .recommended-label { display: none; }
+      .description { min-height: 0; margin: 7px 0 13px; font-size: 14px; }
+      .compare { width: auto; padding: 8px 14px; margin-bottom: 18px; }
+      .size-control, .note { display: none; }
+      .phone { border-width: 4px; border-radius: 30px; }
+      .screen { min-height: 760px; }
+    }
+    @media (prefers-reduced-motion: no-preference) { .variant, .mode, .practice { transition: background-color 160ms ease-out, border-color 160ms ease-out; } }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <aside class="controls" aria-label="Background options">
+      <h1>A little more warmth.</h1>
+      <p class="intro">Same Speaking Coach screen. Seven ways to change the atmosphere. Tap a treatment to try it.</p>
+      <div class="variants" role="group" aria-label="Choose a background">
+        <button class="variant" data-theme="recommended" aria-pressed="true"><span class="swatch" aria-hidden="true"></span>Ivory + welcome<span class="recommended-label">My pick</span></button>
+        <button class="variant" data-theme="original" aria-pressed="false" style="--swatch:#fff"><span class="swatch" aria-hidden="true"></span>Original white</button>
+        <button class="variant" data-theme="paper" aria-pressed="false" style="--swatch:#f7f5ef"><span class="swatch" aria-hidden="true"></span>Warm paper</button>
+        <button class="variant" data-theme="eucalyptus" aria-pressed="false" style="--swatch:#f0f5ef"><span class="swatch" aria-hidden="true"></span>Eucalyptus</button>
+        <button class="variant" data-theme="welcome" aria-pressed="false"><span class="swatch" aria-hidden="true"></span>Green welcome</button>
+        <button class="variant" data-theme="botanical" aria-pressed="false"><span class="swatch" aria-hidden="true"></span>Botanical corner</button>
+        <button class="variant" data-theme="texture" aria-pressed="false" style="--swatch:#f1eddf"><span class="swatch" aria-hidden="true"></span>Paper texture</button>
+      </div>
+      <p id="description" class="description" aria-live="polite"></p>
+      <button class="compare" id="compare" aria-pressed="false">Compare with original</button>
+      <label class="size-control">Width <input type="range" id="width" min="320" max="430" value="390" step="1"><output id="width-value">390px</output></label>
+      <p class="note">An interactive visual mock. Choose a practice mode and expand the recording note to see each treatment with real content.</p>
+    </aside>
+    <section class="stage" aria-label="Mobile app preview">
+      <div class="phone" id="phone" data-theme="recommended">
+        <div class="screen">
+          <div class="status" aria-hidden="true"><span>9:41</span><svg viewBox="0 0 55 14" fill="currentColor"><path d="M0 10h3v4H0zm5-3h3v7H5zm5-3h3v10h-3zm5-3h3v13h-3z"/><path d="M23 5q7-7 14 0l-2 2q-5-5-10 0zm4 4q3-3 6 0l-3 3z"/><rect x="40" y="2" width="12" height="10" rx="2" fill="none" stroke="currentColor"/><rect x="42" y="4" width="8" height="6" rx="1"/><path d="M53 5h2v4h-2z"/></svg></div>
+          <header class="app-header"><span class="brand">Speaking Coach</span><div class="header-actions"><button class="plain" data-preview="History would open your past practices in the app.">History</button><button class="plain account" aria-label="Account" data-preview="Account settings would open in the app."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="9" r="3"/><path d="M5.5 19c.8-4.5 12.2-4.5 13 0"/></svg></button></div></header>
+          <div class="welcome">
+            <img class="leaves" src="./botanical-leaf.svg" alt="" aria-hidden="true">
+            <h2>Choose a practice</h2>
+            <div class="greeting"><img class="koala" src="./koala.svg" alt="Speaking Coach koala"><div class="bubble" id="greeting">Want to run through a few questions?</div></div>
+          </div>
+          <div class="content">
+            <div class="modes" role="radiogroup" aria-label="Practice mode">
+              <button class="mode" role="radio" aria-checked="false" data-mode="impromptu"><span class="mode-copy"><span class="mode-name">Impromptu</span><span class="mode-description">Explain a scientific topic.</span></span><span class="radio" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m3 8 3 3 7-7"/></svg></span></button>
+              <button class="mode" role="radio" aria-checked="true" data-mode="interview"><span class="mode-copy"><span class="mode-name">Interview</span><span class="mode-description">Answer common interview questions.</span></span><span class="radio" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m3 8 3 3 7-7"/></svg></span></button>
+              <button class="mode" role="radio" aria-checked="false" data-mode="rehearse"><span class="mode-copy"><span class="mode-name">Rehearse</span><span class="mode-description">Practice a speech from your main points.</span></span><span class="radio" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m3 8 3 3 7-7"/></svg></span></button>
+            </div>
+            <button class="practice" id="practice">Practice interview</button>
+            <p class="preview-message" id="preview-message" role="status" hidden></p>
+            <details><summary>About your recordings<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 6 4 4 4-4"/></svg></summary><p>Recordings and history are saved on this device. Audio is sent to cloud AI for feedback. No account required.</p></details>
+            <div class="home-bar" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption" id="caption">Ivory + welcome · 390px preview</p>
+    </section>
+  </main>
+  <script>
+    const themes = {
+      recommended: { name: 'Ivory + welcome', description: 'Warm ivory below, a soft eucalyptus welcome above. White cards feel clearer, and the koala gets a little space of its own.' },
+      original: { name: 'Original white', description: 'The current white canvas and white cards. Use this as your baseline for comparison.' },
+      paper: { name: 'Warm paper', description: 'A quiet ivory canvas (#F7F5EF), white cards, and softer borders. The smallest change with a noticeable lift.' },
+      eucalyptus: { name: 'Eucalyptus', description: 'A pale sage canvas (#F0F5EF). A cooler, greener atmosphere that connects the whole screen to the existing green controls.' },
+      welcome: { name: 'Green welcome', description: 'A pale green welcome area behind the title and koala. The rest stays white, giving the top of the screen a clear focal point.' },
+      botanical: { name: 'Botanical corner', description: 'An almost-white canvas (#FAFCFB) with a cool green undertone. A single flat green leaf with rounded lobes, shaped to match your reference.' },
+      texture: { name: 'Paper texture', description: 'Warm ivory with very fine paper grain. The texture stays behind the content; cards and the speech bubble remain clean white.' }
+    };
+    const phone = document.querySelector('#phone');
+    const compare = document.querySelector('#compare');
+    const variants = [...document.querySelectorAll('.variant')];
+    let selected = Object.hasOwn(themes, location.hash.slice(1)) ? location.hash.slice(1) : 'recommended';
+    let comparing = false;
+    const width = document.querySelector('#width');
+    function render() {
+      const visible = comparing ? 'original' : selected;
+      phone.dataset.theme = visible;
+      variants.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.theme === selected)));
+      document.querySelector('#description').textContent = themes[visible].description;
+      document.querySelector('#caption').textContent = `${themes[visible].name} · ${width.value}px preview`;
+      document.querySelector('meta[name="theme-color"]').content = visible === 'original' || visible === 'welcome' ? '#ffffff' : visible === 'botanical' ? '#fafcfb' : visible === 'eucalyptus' ? '#f0f5ef' : '#f7f5ef';
+      compare.setAttribute('aria-pressed', String(comparing));
+      compare.textContent = comparing ? `Back to ${themes[selected].name.toLowerCase()}` : 'Compare with original';
+      compare.hidden = selected === 'original';
+    }
+    variants.forEach(button => button.addEventListener('click', () => { selected = button.dataset.theme; comparing = false; history.replaceState(null, '', `#${selected}`); render(); }));
+    window.addEventListener('hashchange', () => { if (Object.hasOwn(themes, location.hash.slice(1))) { selected = location.hash.slice(1); comparing = false; render(); } });
+    compare.addEventListener('click', () => { comparing = !comparing; render(); });
+    width.addEventListener('input', () => { phone.style.setProperty('--phone-width', `${width.value}px`); document.querySelector('#width-value').textContent = `${width.value}px`; render(); });
+    const messages = { impromptu: 'What can you teach me today?', interview: 'Want to run through a few questions?', rehearse: 'Go on. I’m all ears.' };
+    const modeButtons = [...document.querySelectorAll('.mode')];
+    function selectMode(button) {
+      modeButtons.forEach(item => { item.setAttribute('aria-checked', String(item === button)); item.tabIndex = item === button ? 0 : -1; });
+      document.querySelector('#greeting').textContent = messages[button.dataset.mode];
+      document.querySelector('#practice').textContent = `Practice ${button.dataset.mode}`;
+      document.querySelector('#preview-message').hidden = true;
+    }
+    modeButtons.forEach((button, index) => {
+      button.addEventListener('click', () => selectMode(button));
+      button.addEventListener('keydown', event => {
+        if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? modeButtons.length - 1 : (index + (['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1) + modeButtons.length) % modeButtons.length;
+        selectMode(modeButtons[next]); modeButtons[next].focus();
+      });
+    });
+    function previewMessage(text) { const message = document.querySelector('#preview-message'); message.textContent = text; message.hidden = false; }
+    document.querySelector('#practice').addEventListener('click', () => previewMessage('This is a visual preview. In the app, this opens practice setup.'));
+    document.querySelectorAll('[data-preview]').forEach(button => button.addEventListener('click', () => previewMessage(button.dataset.preview)));
+    // Generate one small static tile; no animated grain or external dependencies.
+    const paper = document.createElement('canvas'); paper.width = paper.height = 160;
+    const context = paper.getContext('2d');
+    if (context) {
+      const grain = context.createImageData(160, 160);
+      let seed = 42;
+      for (let index = 0; index < grain.data.length; index += 4) { seed = (seed * 1664525 + 1013904223) >>> 0; const tone = seed % 256; grain.data[index] = grain.data[index + 1] = grain.data[index + 2] = tone; grain.data[index + 3] = 255; }
+      context.putImageData(grain, 0, 0);
+      const texture = `url(${paper.toDataURL()})`;
+      document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `.phone[data-theme="texture"] { --texture: ${texture}; } .variant[data-theme="texture"] .swatch { background-image: ${texture}; background-blend-mode: soft-light; }` }));
+    }
+    selectMode(modeButtons[1]);
+    render();
+  </script>
+</body>
+</html>

@@ -1,41 +1,41 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# Speaking Coach
 
-## Expo has changed — do not trust your training data
+Mobile-first English speaking practice app built with Expo and React Native. Users record impromptu explanations, interview answers, or rehearsed speeches and receive AI feedback. See `README.md` for setup and product details.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+## Project layout
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+- `src/app/`: Expo Router screens and layouts. Keep components, hooks, and utilities outside this directory.
+- `src/components/`: shared UI; NativeWind and React Native Reusables provide styling.
+- `src/domain/`: practice types, validation, and scoring.
+- `src/state/` and `src/services/`: app state, local persistence, and API calls.
+- `apps/api/`: Hono backend for prompts and audio analysis.
 
 ## Commands
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+Use pnpm for this workspace.
 
-```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
+```sh
+pnpm install
+pnpm start          # Expo development server
+pnpm web           # Web app
+pnpm api           # Local API server
+pnpm check         # App lint, app/API typechecks, and API tests
 ```
 
-Run lint and typecheck before declaring any task done.
+Run lint and typecheck before finishing work. For backend changes, also run API tests; `pnpm check` covers all three.
 
-## Navigation & Routing
+## Expo and mobile rules
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+- Before changing Expo, EAS, or React Native API usage, read the Expo major version in `package.json` and consult `https://docs.expo.dev/versions/v<major>.0.0/`. For other Expo topics, follow the relevant links in `https://docs.expo.dev/llms.txt`.
+- Use Expo Router for navigation, importing routing APIs from `expo-router`.
+- Install app dependencies with `npx expo install <package> -- -w` to resolve SDK-compatible versions. Prefer recommended Expo modules.
+- Keep iOS, Android, and web behavior in mind, especially microphone permissions, recording lifecycle, and persistent audio.
+- Configure native behavior through app config and config plugins. Do not create or edit generated `ios/` or `android/` directories by hand.
+- Native modules unavailable in Expo Go require a development build.
+- Use `npx eas-cli@latest` for EAS cloud builds, submission, and updates when requested.
 
-## Building with EAS
+## Product constraints
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
-
-## Rules
-
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+- Use real recordings, prompts, and feedback; do not fabricate practice history or results.
+- Recordings and history are stored locally per account. Cloud history synchronization is not implemented.
+- Keep AI provider credentials on the backend. Never put secrets in `EXPO_PUBLIC_` variables.
