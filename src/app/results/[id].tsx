@@ -137,7 +137,10 @@ export default function Results() {
           <FeedbackSection title="Delivery" section={analysis.delivery} />
           <Panel>
             <Label>Recording</Label>
-            <AudioPlayback uri={attempt.uri} />
+            <AudioPlayback
+              uri={attempt.uri}
+              durationSeconds={attempt.durationSeconds}
+            />
             <Expand title="Transcript & detected fillers">
               <Transcript
                 text={analysis.transcript}
@@ -231,7 +234,10 @@ export default function Results() {
           </Panel>
           <Panel>
             <Label>Saved audio</Label>
-            <AudioPlayback uri={attempt.uri} />
+            <AudioPlayback
+              uri={attempt.uri}
+              durationSeconds={attempt.durationSeconds}
+            />
           </Panel>
           {attempt.status === "interrupted" && (
             <Action
