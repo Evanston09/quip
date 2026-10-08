@@ -1,0 +1,44 @@
+{
+  "idle": { "label": "At ease", "description": "A quiet breath and one natural blink.", "duration": 3600, "frames": [
+    {"t":0,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":0.4,"bodyY":-2,"head":0,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":0.47,"bodyY":-2,"head":0,"headY":0,"left":0,"right":0,"eyes":0.08},
+    {"t":0.52,"bodyY":-2,"head":0,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":1,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1}
+  ]},
+  "wave": { "label": "Hello", "description": "A little wave when you arrive. Tap the koala to replay.", "duration": 2100, "frames": [
+    {"t":0,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":0.22,"bodyY":-2,"head":-4,"headY":0,"left":0,"right":-110,"eyes":1},
+    {"t":0.34,"bodyY":-2,"head":-4,"headY":0,"left":0,"right":-126,"eyes":1},
+    {"t":0.46,"bodyY":-2,"head":-4,"headY":0,"left":0,"right":-94,"eyes":1},
+    {"t":0.58,"bodyY":-2,"head":-4,"headY":0,"left":0,"right":-122,"eyes":1},
+    {"t":0.7,"bodyY":-2,"head":-4,"headY":0,"left":0,"right":-106,"eyes":1},
+    {"t":1,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1}
+  ]},
+  "listen": { "label": "Listening", "description": "A small tilt and nod. Attentive, without following your cursor.", "duration": 2400, "frames": [
+    {"t":0,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":0.27,"bodyY":0,"head":-6,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":0.43,"bodyY":0,"head":-6,"headY":3,"left":0,"right":0,"eyes":1},
+    {"t":0.6,"bodyY":0,"head":-6,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":1,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1}
+  ]},
+  "think": { "label": "Thinking", "description": "A thoughtful head tilt and a gentle paw lift.", "duration": 2800, "frames": [
+    {"t":0,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":0.3,"bodyY":0,"head":7,"headY":0,"left":0,"right":-64,"eyes":1},
+    {"t":0.6,"bodyY":0,"head":7,"headY":0,"left":0,"right":-64,"eyes":1},
+    {"t":1,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1}
+  ]},
+  "nod": { "label": "You’ve got this", "description": "One reassuring nod. No exaggerated grin or sudden movement.", "duration": 1400, "frames": [
+    {"t":0,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":0.35,"bodyY":0,"head":0,"headY":4,"left":0,"right":0,"eyes":1},
+    {"t":0.65,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":1,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1}
+  ]},
+  "celebrate": { "label": "Practice complete", "description": "Paws up for the effort. A soft lift, with feet staying near the ground.", "duration": 2200, "frames": [
+    {"t":0,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1},
+    {"t":0.3,"bodyY":-5,"head":-3,"headY":0,"left":112,"right":-112,"eyes":1},
+    {"t":0.52,"bodyY":-2,"head":3,"headY":0,"left":108,"right":-108,"eyes":1},
+    {"t":0.7,"bodyY":-3,"head":0,"headY":0,"left":112,"right":-112,"eyes":1},
+    {"t":1,"bodyY":0,"head":0,"headY":0,"left":0,"right":0,"eyes":1}
+  ]}
+}

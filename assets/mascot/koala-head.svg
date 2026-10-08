@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="56 64 400 400" fill="none"><g transform="translate(256 440)"><g id="head" transform="translate(0 -176)">
+      <g id="ear-left" transform="translate(-97 -112)">
+        <path d="M24-40C-1-69-49-54-60-22C-74 16-43 53-7 43C19 35 39-14 24-40Z" fill="#8EA5AE" />
+        <path d="M9-27C-11-43-36-27-37-6C-38 15-19 30 0 18C13 9 21-14 9-27Z" fill="#D7C4C5" />
+      </g>
+      <g id="ear-right" transform="translate(97 -112)">
+        <path d="M-24-40C1-69 49-54 60-22C74 16 43 53 7 43C-19 35-39-14-24-40Z" fill="#8EA5AE" />
+        <path d="M-9-27C11-43 36-27 37-6C38 15 19 30 0 18C-13 9-21-14-9-27Z" fill="#D7C4C5" />
+      </g>
+      <g id="face">
+        <path d="M-112-95C-111-153-65-185 0-180C65-185 111-153 112-95C124-28 77 10 0 10C-77 10-124-28-112-95Z" fill="#A4B7BC" />
+        <path d="M-36-171L-20-195L-5-181L11-196L25-174" fill="#A4B7BC" />
+        <ellipse cx="0" cy="-46" rx="66" ry="42" fill="#DDE7E5" />
+      </g>
+      <g id="brow-left" transform="translate(-49 -104)"><path d="M-11 0Q0-7 11-2" stroke="#657F89" stroke-width="5" stroke-linecap="round" /></g>
+      <g id="brow-right" transform="translate(49 -104)"><path d="M-11-2Q0-7 11 0" stroke="#657F89" stroke-width="5" stroke-linecap="round" /></g>
+      <g id="cheeks" fill="#D6ACAC" opacity=".65"><ellipse cx="-72" cy="-55" rx="14" ry="8" /><ellipse cx="72" cy="-55" rx="14" ry="8" /></g>
+      <g id="nose" transform="translate(0 -67)">
+        <path d="M-23-17C-17-34 17-34 23-17L28 8C31 31-31 31-28 8Z" fill="#233B46" />
+        <path d="M-13-15Q-7-23 2-21" stroke="#48606A" stroke-width="6" stroke-linecap="round" />
+      </g>
+      <g id="mouth" transform="translate(0 -29)"><path d="M-17-3Q0 12 17-3" stroke="#233B46" stroke-width="5" stroke-linecap="round" /></g>
+    </g>
+  </g></svg>

@@ -1,3 +1,4 @@
+import { type MascotMotion } from "@/domain/mascot";
 import { router } from "expo-router";
 import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
@@ -107,23 +108,23 @@ export function Muted({ children }: { children: ReactNode }) {
 }
 export function Koala({
   small = false,
-  wave = false,
+  motion = "idle",
 }: {
   small?: boolean;
-  wave?: boolean;
+  motion?: MascotMotion;
 }) {
-  return <KoalaMascot size={small ? 88 : 136} wave={wave} />;
+  return <KoalaMascot size={small ? 88 : 136} motion={motion} />;
 }
 export function KoalaMessage({
   children,
-  wave = false,
+  motion = "idle",
 }: {
   children: string;
-  wave?: boolean;
+  motion?: MascotMotion;
 }) {
   return (
     <View className="flex-row items-center gap-4">
-      <Koala small wave={wave} />
+      <Koala small motion={motion} />
       <View className="min-h-20 flex-1 justify-center rounded-2xl border-2 border-border bg-card px-4 py-4">
         <View
           pointerEvents="none"
@@ -155,7 +156,7 @@ export function Screen({
   back?: boolean;
   botanical?: boolean;
 }) {
-  const { storageError, loaded } = usePractice();
+  const { storageError, loaded, loading, loadError, reload, reset } = usePractice();
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView
@@ -176,34 +177,31 @@ export function Screen({
             ) : (
               <Text className="text-lg font-extrabold">Speaking Coach</Text>
             )}
-            <View className="flex-row">
-              <Action variant="ghost" onPress={() => router.push("/history")}>
-                History
-              </Action>
-              <Button
-                variant="ghost"
-                className="h-12 w-12 rounded-xl"
-                accessibilityLabel="Account"
-                onPress={() => router.push("/account")}
-              >
-                <SymbolView
-                  name={{
-                    ios: "person.crop.circle",
-                    android: "account_circle",
-                    web: "account_circle",
-                  }}
-                  size={24}
-                  tintColor="#3D705B"
-                />
-              </Button>
-            </View>
+            <Action variant="ghost" onPress={() => router.push("/history")}>
+              History
+            </Action>
           </View>
           {storageError && (
             <Panel className="border-destructive">
               <Text className="text-destructive">{storageError}</Text>
             </Panel>
           )}
-          {!loaded ? (
+          {!loaded && loadError ? (
+            <Panel>
+              <Title>Let’s recover your practice</Title>
+              <Text accessibilityRole="alert">{loadError}</Text>
+              <Action disabled={loading} onPress={() => { void reload(); }}>
+                {loading ? "Opening saved practice…" : "Try opening again"}
+              </Action>
+              <Confirm
+                label="Reset local practice"
+                confirmLabel="Reset this device"
+                disabled={loading}
+                message="Delete all practice recordings, feedback, preparation, your saved goal, and coaching preferences from this device? Copies already sent to AI providers are not deleted."
+                onConfirm={reset}
+              />
+            </Panel>
+          ) : !loaded ? (
             <View className="items-center gap-4 py-20">
               <ActivityIndicator color="#3D705B" />
               <Muted>Loading…</Muted>
@@ -255,16 +253,23 @@ export function Confirm({
   label,
   message,
   onConfirm,
+  confirmLabel = "Delete from this device",
+  disabled = false,
+  variant = "ghost",
 }: {
   label: string;
   message: string;
   onConfirm: () => Promise<void>;
+  confirmLabel?: string;
+  disabled?: boolean;
+  variant?: ButtonProps["variant"];
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const perform = async () => {
     setBusy(true);
+    setError("");
     try {
       await onConfirm();
       setOpen(false);
@@ -277,15 +282,15 @@ export function Confirm({
   return (
     <View className="gap-3">
       <Action
-        variant="ghost"
-        disabled={busy}
+        variant={variant}
+        disabled={busy || disabled}
         onPress={() => {
           if (Platform.OS === "web") setOpen(true);
           else
             Alert.alert(label, message, [
               { text: "Cancel", style: "cancel" },
               {
-                text: "Delete",
+                text: confirmLabel,
                 style: "destructive",
                 onPress: () => {
                   void perform();
@@ -301,14 +306,14 @@ export function Confirm({
           <Text>{message}</Text>
           <Action
             variant="destructive"
-            disabled={busy}
+            disabled={busy || disabled}
             onPress={() => {
               void perform();
             }}
           >
-            Delete permanently
+            {confirmLabel}
           </Action>
-          <Action variant="outline" onPress={() => setOpen(false)}>
+          <Action disabled={busy} variant="outline" onPress={() => setOpen(false)}>
             Cancel
           </Action>
         </Panel>
