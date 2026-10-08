@@ -118,13 +118,15 @@ export function Koala({
 export function KoalaMessage({
   children,
   motion = "idle",
+  small = true,
 }: {
   children: string;
   motion?: MascotMotion;
+  small?: boolean;
 }) {
   return (
     <View className="flex-row items-center gap-4">
-      <Koala small motion={motion} />
+      <Koala small={small} motion={motion} />
       <View className="min-h-20 flex-1 justify-center rounded-2xl border-2 border-border bg-card px-4 py-4">
         <View
           pointerEvents="none"
@@ -177,7 +179,7 @@ export function Screen({
                 Back
               </Action>
             ) : (
-              <Text className="text-lg font-extrabold">Speaking Coach</Text>
+              <Text className="text-lg font-extrabold">Quip</Text>
             )}
           </View>
           {storageError && (

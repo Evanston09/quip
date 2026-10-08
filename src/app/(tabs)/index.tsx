@@ -19,14 +19,14 @@ export default function Home() {
   return (
     <Screen back={false} tabScreen>
       <Title botanical>Choose a practice</Title>
-      <KoalaMessage motion={recording ? "listen" : "wave"}>
+      <KoalaMessage motion="wave" small={false}>
         {recording
           ? "Still recording. I’m all ears."
           : mode === "impromptu"
             ? "What can you teach me today?"
             : mode === "rehearse"
               ? "Go on. I’m all ears."
-              : "Want to run through a few questions?"}
+              : "I’m Quippy. Want to run through a few questions?"}
       </KoalaMessage>
       {(state.session || recording) && (
         <Action

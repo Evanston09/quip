@@ -1,4 +1,4 @@
-# Speaking coach: interview decisions
+# Quip: interview decisions
 
 Working record of the product interview, not a completed implementation specification. Unresolved choices remain open.
 
@@ -54,13 +54,13 @@ Working record of the product interview, not a completed implementation specific
 - Users may delete an individual attempt and its audio and feedback, or delete all practice data after confirmation. Remove deleted attempts from progress calculations and preserve other attempts on the prompt. Remove comparisons referencing deleted attempts.
 - Defer XP, levels, streaks, achievements, and separate vocabulary exercises. The Duolingo-inspired visual direction does not expand the MVP game mechanics.
 - Home offers three mode cards, a Continue practicing shortcut, and recent progress; all modes are available immediately. Continue resumes unfinished preparation before historical results. Replacing unfinished preparation requires an explicit choice; opening or leaving old feedback never discards ongoing preparation. Leaving setup cancels pending prompt generation.
-- Visual direction: playful, Duolingo-inspired, while still professional. The mascot is the original koala SVG, with no scarf and arms joined more closely to the shoulders. The user accepted the design with these revisions. Keep Speaking Coach as the working app name.
+- Visual direction: playful, Duolingo-inspired, while still professional. The mascot is the original koala SVG, with no scarf and arms joined more closely to the shoulders. The user accepted the design with these revisions. The app is named Quip; its koala coach is Quippy.
 - Show the koala on Home and Results only, never during recording.
 - Coaching is warm and direct, with short, kind, easy-to-skim feedback.
 
 ## UI components and styling
 
-- Use [React Native Reusables](https://github.com/founded-labs/react-native-reusables) as the component foundation, following its [official documentation](https://reactnativereusables.com/docs). Style its components consistently for Speaking Coach instead of introducing a competing UI system.
+- Use [React Native Reusables](https://github.com/founded-labs/react-native-reusables) as the component foundation, following its [official documentation](https://reactnativereusables.com/docs). Style its components consistently for Quip instead of introducing a competing UI system.
 - Retain the project's existing NativeWind styling direction. The current `components.json` points to `src/global.css`, `tailwind.config.js`, and `@/components/ui`; treat these as existing configuration, not evidence that the final UI has been implemented.
 - Approved palette: warm off-white backgrounds, charcoal text, and eucalyptus-green accents, complementing the gray koala.
 - Use rounded cards and controls, readable type, generous spacing, and subtle completion celebrations. Maintain a professional, uncluttered appearance.

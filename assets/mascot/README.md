@@ -1,8 +1,8 @@
-# Koala mascot
+# Quippy, the Quip mascot
 
 Original slate-grey vector koala, with its familiar eyes and smile preserved. Six finite motions live in `motions.json`: idle breathing and a blink, hello wave, listening tilt, thinking paw lift, reassuring nod, and practice-complete celebration.
 
-`src/components/koala-mascot.tsx` plays the shared keyframes with Reanimated. Home greets the user; completed feedback acknowledges their effort (a reassuring nod when scientific corrections are present). Tap the koala to replay. The mascot stays on Home and Results, away from the recording screen. Sequences cancel on navigation or backgrounding. System Reduce Motion shows a still pose.
+`src/components/koala-mascot.tsx` plays the shared keyframes with Reanimated. Home shows Quippy at a larger size with a welcome wave on each visit. Results celebrates the effort with paws up and an encouraging message, or a reassuring nod when scientific corrections are present. Encouragement never claims a score improved without evidence. Tap Quippy to replay. The mascot stays on Home and Results, away from the recording screen. Sequences cancel on navigation or backgrounding. System Reduce Motion shows a still pose.
 
 A short, tapered neck sits behind the head and torso, filling the shoulder gap during tilts without lengthening the silhouette. The body, head, arms, eyes, and shadow are separate SVG layers. Arms rotate about shoulders at (196, 287) and (316, 287); the head rotates about (256, 264). The eyes stay attached to the head. Body parts overlap at their joints. Head rotation is limited to 7 degrees and body travel to 5 units on the 512-unit canvas; no gaze tracking or mouth morphing.
 

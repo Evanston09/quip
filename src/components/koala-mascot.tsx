@@ -64,7 +64,7 @@ export function KoalaMascot({ size, motion = "idle" }: { size: number; motion?: 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Koala. ${MASCOT_MOTIONS[motion].label}`}
+      accessibilityLabel={`Quippy the koala. ${MASCOT_MOTIONS[motion].label}`}
       accessibilityHint="Tap to replay this gentle animation"
       onPress={play}
       style={{ ...full, alignSelf: "center" }}

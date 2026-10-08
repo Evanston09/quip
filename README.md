@@ -1,10 +1,12 @@
-# Speaking Coach
+# Quip
 
-A mobile-first, audio-only English speaking coach built with Expo SDK 57, Expo Router, NativeWind, and React Native Reusables. The original koala and eucalyptus palette accompany real practice; the app starts with empty history and never fabricates prompts, recordings, or feedback.
+A mobile-first, audio-only English speaking coach built with Expo SDK 57, Expo Router, NativeWind, and React Native Reusables. Quippy, the original koala speaking coach, and the eucalyptus palette accompany real practice; the app starts with empty history and never fabricates prompts, recordings, or feedback.
 
 Choose **Impromptu** for scientific explanations, **Interview** for common behavioral questions, or **Rehearse** for your own outline and audience. Prepare, record, receive content and delivery feedback, choose a goal, and retry the same prompt with a comparison. History groups retries and separates score trends by mode.
 
 Bottom tabs separate **Home**, **Previous sessions**, and **Settings**. Home focuses on choosing or continuing practice; Previous sessions contains recordings, feedback, and score trends. Settings contains coaching preferences, the saved practice goal, privacy details, and confirmed deletion of practice data. Setup, recording, feedback, and preference editing open above the tabs.
+
+Previous sessions charts the latest 12 completed attempts per practice mode with Gifted Charts. Content and Delivery share a fixed 0–100 scale; attempts are equally spaced in date order. Tap a point to open feedback, or use Earlier/Later and Open this feedback below the graph. Failed and pending attempts stay in history but do not contribute scores. Different prompts and difficulties can affect scores, so the chart is a trend rather than a controlled comparison.
 
 Unfinished preparation resumes through **Continue practice**, including retries with their original goal and deadline. Starting another practice asks before replacing unfinished preparation; reading old feedback never clears it. Leaving setup cancels pending prompt generation. Use **Use this goal next time** on feedback to save a goal across prompts and days; setup can omit it for one practice, and Settings can clear it.
 
@@ -80,3 +82,5 @@ npx expo-doctor
 Regression tests use isolated synthetic audio, provider stubs, and local-state fixtures, never user-facing fixtures. They check scoring arithmetic, context validation, real audio duration limits, multipart integration, service recovery, rate-limit propagation, prompt cancellation, guarded preparation replacement, retry baselines, saved goals, corrupt metadata, and failed or cancelled persistence. `pnpm check` runs lint, app/API typechecks, and all regression tests.
 
 The product decisions and ADRs in `docs/` record the accepted architecture and the earlier documentation phase. Application and local backend implementation were subsequently authorized by the user. Public deployment remains deferred.
+
+Quip’s iOS, Android adaptive/themed, splash, and web icons live in `assets/brand/`. See `assets/brand/README.md` for the artwork sources and regeneration steps.

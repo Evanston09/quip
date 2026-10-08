@@ -64,7 +64,7 @@ function PreferencesForm() {
       <ScrollView ref={scroll} contentContainerStyle={{ flexGrow: 1 }}>
         <View className="mx-auto w-full max-w-xl flex-1 gap-8 px-6 pb-8 pt-2">
           <View className="flex-row items-center justify-between gap-3">
-            <Text className="shrink text-lg font-extrabold">Speaking Coach</Text>
+            <Text className="shrink text-lg font-extrabold">Quip</Text>
             <Action variant="ghost" disabled={busy || recording} onPress={() => {
               if (editing) router.dismissTo("/settings");
               else void save(true);
@@ -77,6 +77,7 @@ function PreferencesForm() {
             <Muted>{`Question ${step + 1} of 3`}</Muted>
           </View>
           <View className="gap-3">
+            {!editing && step === 0 && <Muted>Meet Quippy, your koala speaking coach. Let’s make practice feel like you.</Muted>}
             <Title botanical>{question.title}</Title>
             <Muted>{editing && step === 0 ? "Changing your focus updates your saved practice goal. Existing practices keep their original goal." : question.hint}</Muted>
           </View>

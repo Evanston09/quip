@@ -84,7 +84,9 @@ function AttemptResults({ id }: { id: string }) {
       ) : analysis ? (
         <>
           <KoalaMessage motion={analysis.seriousFactualMistakes.length ? "nod" : "celebrate"}>
-            Okay, here’s what stood out.
+            {analysis.seriousFactualMistakes.length
+              ? "You put in the practice. Let’s clear up a few facts and keep going."
+              : "You showed up and practiced. Let’s find one small thing to build on."}
           </KoalaMessage>
           <View className="items-center gap-2">
             <Title>{analysis.overallScore} / 100</Title>
@@ -225,7 +227,9 @@ function AttemptResults({ id }: { id: string }) {
       ) : (
         <>
           <KoalaMessage motion={attempt.status === "processing" ? "think" : "nod"}>
-            {attempt.status === "processing" ? "Let’s listen to what you recorded." : "Take your time. We can try again."}
+            {attempt.status === "processing"
+              ? "Your recording is saved. Let’s see what you can build on."
+              : "A little setback doesn’t undo your effort. We can try again."}
           </KoalaMessage>
           <Panel>
             {attempt.status === "processing" ? (
