@@ -1,4 +1,5 @@
 import { type Preferences } from "@/domain/preferences";
+import { speakingGoalSchema } from "@/domain/goals";
 import {
   AudioModule,
   RecordingPresets,
@@ -384,7 +385,10 @@ export function PracticeProvider({
         elapsed: recorderState.durationMillis / 1000,
         metering: recording && recorderState.isRecording ? recorderState.metering : undefined,
         setSession,
-        setPracticeGoal: (goal) => update((saved) => ({ ...saved, practiceGoal: goal })),
+        setPracticeGoal: (goal) => {
+          const validated = goal === undefined ? undefined : speakingGoalSchema.parse(goal);
+          return update((saved) => ({ ...saved, practiceGoal: validated }));
+        },
         savePreferences: (preferences) => update((saved) => {
           if (active.current || starting.current) throw new Error("Finish your recording before changing coaching preferences.");
           return completeOnboarding(saved, preferences);

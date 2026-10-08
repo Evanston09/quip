@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { coachingPreferencesSchema } from "./preferences.ts";
+import { speakingGoalSchema } from "./goals.ts";
 
 export const modeSchema = z.enum(["impromptu", "interview", "rehearse"]);
 export type Mode = z.infer<typeof modeSchema>;
@@ -27,7 +28,7 @@ const sectionSchema = z.object({
   criteria: z.array(criterionSchema).min(1),
   points: z.array(z.string().min(1)).min(1).max(3),
 });
-export const coachingSchema = z.object({
+const feedbackSchema = z.object({
   transcript: z.string().max(20000),
   content: sectionSchema,
   delivery: sectionSchema,
@@ -43,8 +44,13 @@ export const coachingSchema = z.object({
   ),
   goalCommentary: z.string().nullable(),
 });
+export const coachingSchema = feedbackSchema.extend({
+  recommendedGoal: speakingGoalSchema,
+  alternativeGoals: z.array(speakingGoalSchema).max(3),
+});
 export type Coaching = z.infer<typeof coachingSchema>;
-export const analysisSchema = coachingSchema
+// Stored feedback preserves the original wording; new provider output uses the goal catalog.
+export const analysisSchema = feedbackSchema
   .omit({ fillers: true, goalCommentary: true })
   .extend({
     transcript: z.string().min(1).max(20000),

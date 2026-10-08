@@ -17,6 +17,7 @@ import { FeedbackSection, Transcript } from "@/components/feedback-section";
 import { StartPracticeAction } from "@/components/start-practice-action";
 import { Text } from "@/components/ui/text";
 import { clockTime, latestCompleted, MODES, retrySession } from "@/domain/practice";
+import { speakingGoalOptions } from "@/domain/goals";
 import { newId, usePractice } from "@/state/practice";
 
 export default function Results() {
@@ -45,7 +46,8 @@ function AttemptResults({ id }: { id: string }) {
   const group = state.attempts.filter((a) => a.session.id === attempt?.session.id).sort((a, b) => a.createdAt - b.createdAt);
   const attemptNumber = (attemptId: string) => group.findIndex((a) => a.id === attemptId) + 1;
   const previous = state.attempts.find((a) => a.id === analysis?.comparison?.previousAttemptId && a.status === "ready");
-  const nextGoal = goal ?? analysis?.recommendedGoal;
+  const goalOptions = analysis ? speakingGoalOptions(analysis.recommendedGoal, analysis.alternativeGoals) : [];
+  const nextGoal = goal ?? goalOptions[0];
   const retry = async (expectedPreparationId?: string) => {
     if (!attempt) return;
     await setSession(retrySession(attempt, state.attempts, newId(), nextGoal), expectedPreparationId);
@@ -115,17 +117,17 @@ function AttemptResults({ id }: { id: string }) {
                 <Text>{attempt.session.selectedGoal}</Text>
               </>
             )}
-            <Label>Next practice goal</Label>
+            <Label>Speaking goal</Label>
             <Text className="text-lg font-semibold leading-7">
-              {goal ?? analysis.recommendedGoal}
+              {nextGoal}
             </Text>
             <Expand title="Change goal">
-              {[analysis.recommendedGoal, ...analysis.alternativeGoals].map(
+              {goalOptions.map(
                 (g, i) => (
                   <Action
                     key={i}
                     variant={
-                      (goal ?? analysis.recommendedGoal) === g
+                      nextGoal === g
                         ? "default"
                         : "outline"
                     }
@@ -143,7 +145,7 @@ function AttemptResults({ id }: { id: string }) {
             >
               {state.practiceGoal === nextGoal ? "Goal saved for future practice" : "Use this goal next time"}
             </Action>
-            <Muted>Save it for new prompts and speeches, including another day.</Muted>
+            <Muted>A speaking skill you can practice with any prompt. Specific advice for this answer stays in the feedback below.</Muted>
           </Panel>
           {analysis.comparison && previous && (
             <Panel>

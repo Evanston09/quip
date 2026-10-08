@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SPEAKING_GOALS } from "./goals.ts";
 
 export const improvementGoalSchema = z.enum(["clarity", "fillers", "pacing", "organization"]);
 export const englishComfortSchema = z.enum(["learning", "comfortable", "confident"]);
@@ -13,10 +14,10 @@ export type Preferences = z.infer<typeof preferencesSchema>;
 export type CoachingPreferences = z.infer<typeof coachingPreferencesSchema>;
 
 export const GOALS = {
-  clarity: { label: "Clearer answers", description: "Make my main point easier to understand.", goal: "State my main point clearly and explain it with a specific example." },
-  fillers: { label: "Fewer filler words", description: "Use fewer “um,” “like,” and repeated phrases.", goal: "Replace unnecessary filler words and repetition with purposeful pauses." },
-  pacing: { label: "Better pacing", description: "Find a steady pace with room to breathe.", goal: "Use a steady speaking pace and pause between ideas." },
-  organization: { label: "Organizing my ideas", description: "Give my answers a clear beginning, middle, and end.", goal: "Organize my answer with a main point, supporting example, and conclusion." },
+  clarity: { label: "Clearer answers", description: "Make my main point easier to understand.", goal: SPEAKING_GOALS.clarity },
+  fillers: { label: "Fewer filler words", description: "Use fewer “um,” “like,” and repeated phrases.", goal: SPEAKING_GOALS.fillers },
+  pacing: { label: "Better pacing", description: "Find a steady pace with room to breathe.", goal: SPEAKING_GOALS.pacing },
+  organization: { label: "Organizing my ideas", description: "Give my answers a clear beginning, middle, and end.", goal: SPEAKING_GOALS.organization },
 };
 export const COMFORT = {
   learning: { label: "Still learning", description: "I sometimes struggle to find the words." },

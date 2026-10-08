@@ -2,6 +2,8 @@ import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { app } from "./app.ts";
 import { inspectAudio } from "./audio.ts";
+import { SPEAKING_GOALS, speakingGoalOptions, speakingGoalSchema } from "../../../src/domain/goals.ts";
+import { GOALS } from "../../../src/domain/preferences.ts";
 import {
   coachingSchema,
   completeAnalysis,
@@ -63,12 +65,40 @@ const feedback: Coaching = {
   },
   delivery: { criteria: [criterion("Pacing", 90)], points: ["A point"] },
   strength: "A strength",
-  recommendedGoal: "A goal",
+  recommendedGoal: "Support my points with concrete examples and explain why they matter.",
   alternativeGoals: [],
   seriousFactualMistakes: [],
   fillers: [],
   goalCommentary: "Less repetition this time.",
 };
+
+test("specific answer advice stays in feedback while generated and saved goals are reusable skills", () => {
+  const advice = "Explain how your project helped the team.";
+  const result = coachingSchema.parse({
+    ...feedback,
+    content: { ...feedback.content, points: [advice] },
+    recommendedGoal: SPEAKING_GOALS.examples,
+    alternativeGoals: [SPEAKING_GOALS.organization],
+    seriousFactualMistakes: ["Correct the explanation of photosynthesis."],
+  });
+  assert.deepEqual(result.content.points, [advice]);
+  assert.equal(result.recommendedGoal, SPEAKING_GOALS.examples);
+  assert.equal(coachingSchema.safeParse({ ...result, recommendedGoal: advice }).success, false);
+  assert.equal(coachingSchema.safeParse({ ...result, alternativeGoals: [advice] }).success, false);
+  assert.equal(speakingGoalSchema.safeParse(advice).success, false);
+  for (const preference of Object.values(GOALS))
+    assert.equal(speakingGoalSchema.safeParse(preference.goal).success, true);
+});
+
+test("goal choices prioritize the recommendation, remove duplicates, and offer only transferable skills", () => {
+  const choices = speakingGoalOptions(SPEAKING_GOALS.examples, [
+    SPEAKING_GOALS.pacing, SPEAKING_GOALS.examples, "Explain the role of sunlight.",
+  ]);
+  assert.deepEqual(choices.slice(0, 2), [SPEAKING_GOALS.examples, SPEAKING_GOALS.pacing]);
+  assert.equal(choices.length, Object.keys(SPEAKING_GOALS).length);
+  assert.equal(choices.every((goal) => speakingGoalSchema.safeParse(goal).success), true);
+  assert.equal(speakingGoalOptions("Explain photosynthesis.", [])[0], SPEAKING_GOALS.clarity);
+});
 
 test("averages criteria and equal sections, calculates comparisons and transcript rate", () => {
   const context = contextSchema.parse({
@@ -230,6 +260,11 @@ test("full multipart analysis uses actual audio and computes scores server-side"
     assert.match(instruction, /Use a direct tone/);
     assert.match(instruction, /short sentences and everyday English/);
     assert.match(instruction, /same scoring criteria and standards/);
+    assert.match(instruction, /Keep prompt-specific advice in content.points or delivery.points/);
+    assert.match(instruction, /future unrelated prompts/);
+    assert.doesNotMatch(instruction, /prioritize their correction as recommendedGoal/);
+    assert.deepEqual(request.response_format.json_schema.schema.properties.recommendedGoal.enum, Object.values(SPEAKING_GOALS));
+    assert.deepEqual(request.response_format.json_schema.schema.properties.alternativeGoals.items.enum, Object.values(SPEAKING_GOALS));
     return Response.json({
       choices: [{ message: { content: JSON.stringify(coaching) } }],
     });

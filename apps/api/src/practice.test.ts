@@ -16,7 +16,7 @@ const coaching: Coaching = {
   transcript: "Um here is my project",
   content: { criteria: [{ name: "Clarity", score: 60, explanation: "Clear idea", evidence: "my project" }], points: ["Explain the result"] },
   delivery: { criteria: [{ name: "Pacing", score: 70, explanation: "Steady pace", evidence: "Short explanation" }], points: ["Replace um with a pause"] },
-  strength: "Clear idea", recommendedGoal: "Add the outcome", alternativeGoals: [],
+  strength: "Clear idea", recommendedGoal: "Support my points with concrete examples and explain why they matter.", alternativeGoals: [],
   seriousFactualMistakes: [], fillers: [{ phrase: "Um", count: 1 }], goalCommentary: null,
 };
 function attempt(id: string, createdAt: number, status: Attempt["status"] = "ready"): Attempt {
