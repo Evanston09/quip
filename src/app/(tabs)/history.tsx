@@ -3,7 +3,6 @@ import { useState } from "react";
 import { View } from "react-native";
 import {
   Action,
-  Confirm,
   Label,
   Muted,
   Panel,
@@ -13,7 +12,7 @@ import { Text } from "@/components/ui/text";
 import { MODES, type Mode } from "@/domain/practice";
 import { usePractice } from "@/state/practice";
 export default function History() {
-  const { state, clear, recording } = usePractice();
+  const { state } = usePractice();
   const [mode, setMode] = useState<Mode>("interview");
   const completed = state.attempts.filter(
     (a) => a.status === "ready" && a.analysis,
@@ -24,8 +23,18 @@ export default function History() {
   const groups = new Map<string, typeof state.attempts>();
   for (const a of state.attempts)
     groups.set(a.session.id, [...(groups.get(a.session.id) ?? []), a]);
+  if (state.attempts.length === 0)
+    return (
+      <Screen title="Previous sessions" back={false} tabScreen>
+        <Panel>
+          <Text className="text-lg font-bold">No recordings yet.</Text>
+          <Muted>Your recordings and feedback will appear here.</Muted>
+          <Action onPress={() => router.navigate("/")}>Choose a practice</Action>
+        </Panel>
+      </Screen>
+    );
   return (
-    <Screen title="History">
+    <Screen title="Previous sessions" back={false} tabScreen>
       <Muted>
         {completed.length}{" "}
         {completed.length === 1 ? "completed practice" : "completed practices"}
@@ -98,13 +107,6 @@ export default function History() {
         )}
       </Panel>
       <Label>Your practice history</Label>
-      {state.attempts.length === 0 && (
-        <Panel>
-          <Text className="text-lg font-bold">No recordings yet.</Text>
-          <Muted>Your recordings and feedback will appear here.</Muted>
-          <Action onPress={() => router.replace("/")}>Choose a practice</Action>
-        </Panel>
-      )}
       {[...groups.entries()].map(([id, attempts]) => (
         <Panel key={id}>
           <Label>
@@ -129,13 +131,6 @@ export default function History() {
           ))}
         </Panel>
       ))}
-      {!recording && (state.attempts.length > 0 || state.session || state.practiceGoal) && (
-        <Confirm
-          label="Delete all practice data"
-          message="Delete every saved recording, feedback result, comparison, preparation, and saved goal from this device? Copies already sent to AI providers are not deleted."
-          onConfirm={clear}
-        />
-      )}
     </Screen>
   );
 }

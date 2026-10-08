@@ -30,7 +30,7 @@ function PreferencesForm() {
   const saving = useRef(false);
   const [error, setError] = useState("");
   const scroll = useRef<ScrollView>(null);
-  const editing = !!state.onboardingCompleted;
+  const [editing] = useState(() => !!state.onboardingCompleted);
   const question = QUESTIONS[step];
   const changeStep = (next: number) => {
     setStep(next);
@@ -49,7 +49,8 @@ function PreferencesForm() {
     setError("");
     try {
       await savePreferences(skip ? undefined : result.data);
-      setFinished(true);
+      if (editing) router.dismissTo("/settings");
+      else setFinished(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save your preferences. Please try again.");
     } finally {
@@ -65,7 +66,7 @@ function PreferencesForm() {
           <View className="flex-row items-center justify-between gap-3">
             <Text className="shrink text-lg font-extrabold">Speaking Coach</Text>
             <Action variant="ghost" disabled={busy || recording} onPress={() => {
-              if (editing) router.replace("/");
+              if (editing) router.dismissTo("/settings");
               else void save(true);
             }}>{editing ? "Cancel" : "Skip"}</Action>
           </View>
@@ -116,7 +117,7 @@ function PreferencesForm() {
               else void save();
             }}>{busy ? "Saving preferences…" : step < 2 ? "Continue" : editing ? "Save preferences" : "Start practicing"}</Action>
             {step > 0 && <Action variant="ghost" disabled={busy} onPress={() => changeStep(step - 1)}>Previous question</Action>}
-            <Muted>Saved on this device. Your answers guide AI coaching when you practice. You can change them from Home.</Muted>
+            <Muted>Saved on this device. Your answers guide AI coaching when you practice. You can change them in Settings.</Muted>
           </View>
         </View>
       </ScrollView>

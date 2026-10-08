@@ -150,15 +150,17 @@ export function Screen({
   title,
   back = true,
   botanical = false,
+  tabScreen = false,
 }: {
   children: ReactNode;
   title?: string;
   back?: boolean;
   botanical?: boolean;
+  tabScreen?: boolean;
 }) {
   const { storageError, loaded, loading, loadError, reload, reset } = usePractice();
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={tabScreen ? ["top", "left", "right"] : ["top", "bottom", "left", "right"]}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ flexGrow: 1 }}
@@ -177,9 +179,6 @@ export function Screen({
             ) : (
               <Text className="text-lg font-extrabold">Speaking Coach</Text>
             )}
-            <Action variant="ghost" onPress={() => router.push("/history")}>
-              History
-            </Action>
           </View>
           {storageError && (
             <Panel className="border-destructive">

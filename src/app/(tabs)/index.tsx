@@ -1,4 +1,3 @@
-import { STYLES } from "@/domain/preferences";
 import { router } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
@@ -6,9 +5,6 @@ import { View } from "react-native";
 import {
   Action,
   KoalaMessage,
-  Muted,
-  Label,
-  Panel,
   Screen,
   Title,
 } from "@/components/coach-ui";
@@ -16,18 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { MODES, type Mode } from "@/domain/practice";
 import { usePractice } from "@/state/practice";
-import { RecordingPrivacy } from "@/components/recording-privacy";
 
 export default function Home() {
-  const { state, recording, setPracticeGoal } = usePractice();
-  const [error, setError] = useState("");
+  const { state, recording } = usePractice();
   const [mode, setMode] = useState<Mode>("interview");
-  const completed = state.attempts.filter(
-    (a) => a.status === "ready" && a.analysis,
-  );
-  const recent = state.attempts[0];
   return (
-    <Screen back={false}>
+    <Screen back={false} tabScreen>
       <Title botanical>Choose a practice</Title>
       <KoalaMessage motion={recording ? "listen" : "wave"}>
         {recording
@@ -38,39 +28,16 @@ export default function Home() {
               ? "Go on. I’m all ears."
               : "Want to run through a few questions?"}
       </KoalaMessage>
-      {(state.session || recent) && (
+      {(state.session || recording) && (
         <Action
           variant="secondary"
-          onPress={() =>
-            router.push(
-              recording || state.session
-                ? "/practice"
-                : {
-                    pathname: "/results/[id]",
-                    params: { id: recent!.id },
-                  },
-            )
-          }
+          onPress={() => router.push("/practice")}
         >
           {recording
             ? "Return to recording"
-            : state.session
-              ? "Continue practice"
-              : "View latest feedback"}
+            : "Continue practice"}
         </Action>
       )}
-      {state.practiceGoal && (
-        <Panel>
-          <Label>Your saved practice goal</Label>
-          <Text>{state.practiceGoal}</Text>
-          <Muted>Available for your next prompt or speech, even after closing the app.</Muted>
-          <Action disabled={recording} variant="ghost" onPress={async () => {
-            try { await setPracticeGoal(undefined); setError(""); }
-            catch (e) { setError(e instanceof Error ? e.message : "Could not clear your goal."); }
-          }}>Clear saved goal</Action>
-        </Panel>
-      )}
-      {!!error && <Text className="text-destructive">{error}</Text>}
       <View
         className="gap-3"
         accessibilityRole="radiogroup"
@@ -114,26 +81,6 @@ export default function Home() {
         disabled={recording}
         onPress={() => router.push({ pathname: "/setup", params: { mode } })}
       >{`Practice ${MODES[mode].label.toLowerCase()}`}</Action>
-      {completed.length > 0 && (
-        <View className="flex-row items-center justify-between border-t border-border pt-4">
-          <Muted>
-            {completed.length}{" "}
-            {completed.length === 1
-              ? "practice completed"
-              : "practices completed"}
-          </Muted>
-          <Action variant="ghost" onPress={() => router.push("/history")}>
-            View progress
-          </Action>
-        </View>
-      )}
-      <View className="gap-1 border-t border-border pt-4">
-        <Action variant="ghost" disabled={recording} onPress={() => router.push("./onboarding")}>
-          Coaching preferences
-        </Action>
-        <Muted>{state.preferences ? `${STYLES[state.preferences.feedbackStyle].label} feedback · Change your focus, comfort, or feedback style.` : "Choose your focus, English comfort, and feedback style."}</Muted>
-      </View>
-      <RecordingPrivacy />
     </Screen>
   );
 }

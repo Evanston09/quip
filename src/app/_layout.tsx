@@ -58,10 +58,9 @@ function PracticeNavigator() {
       }}
     >
       <Stack.Protected guard={!loaded || !!state.onboardingCompleted}>
-        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
         <Stack.Screen name="setup" />
         <Stack.Screen name="practice" />
-        <Stack.Screen name="history" />
         <Stack.Screen name="results/[id]" />
       </Stack.Protected>
       <Stack.Screen name="onboarding" />

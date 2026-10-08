@@ -4,9 +4,11 @@ A mobile-first, audio-only English speaking coach built with Expo SDK 57, Expo R
 
 Choose **Impromptu** for scientific explanations, **Interview** for common behavioral questions, or **Rehearse** for your own outline and audience. Prepare, record, receive content and delivery feedback, choose a goal, and retry the same prompt with a comparison. History groups retries and separates score trends by mode.
 
-Unfinished preparation resumes through **Continue practice**, including retries with their original goal and deadline. Starting another practice asks before replacing unfinished preparation; reading old feedback never clears it. Leaving setup cancels pending prompt generation. Use **Use this goal next time** on feedback to save a goal across prompts and days; setup can omit it for one practice, and Home can clear it.
+Bottom tabs separate **Home**, **Previous sessions**, and **Settings**. Home focuses on choosing or continuing practice; Previous sessions contains recordings, feedback, and score trends. Settings contains coaching preferences, the saved practice goal, privacy details, and confirmed deletion of practice data. Setup, recording, feedback, and preference editing open above the tabs.
 
-On first launch, three optional questions choose a practice focus, English comfort, and feedback style (Encouraging, Balanced, or Direct). Skip is remembered; **Coaching preferences** on Home lets you edit later. The focus seeds a saved goal; comfort adjusts prompt and feedback wording without changing subject difficulty; style changes coaching tone without changing scoring standards. Preferences stay on this device and are included in AI requests when relevant. Each practice snapshots its coaching preferences, so later edits do not alter pending feedback or retries.
+Unfinished preparation resumes through **Continue practice**, including retries with their original goal and deadline. Starting another practice asks before replacing unfinished preparation; reading old feedback never clears it. Leaving setup cancels pending prompt generation. Use **Use this goal next time** on feedback to save a goal across prompts and days; setup can omit it for one practice, and Settings can clear it.
+
+On first launch, three optional questions choose a practice focus, English comfort, and feedback style (Encouraging, Balanced, or Direct). Skip is remembered; **Coaching preferences** in Settings lets you edit later and returns you to Settings when saved or cancelled. The focus seeds a saved goal; comfort adjusts prompt and feedback wording without changing subject difficulty; style changes coaching tone without changing scoring standards. Preferences stay on this device and are included in AI requests when relevant. Each practice snapshots its coaching preferences, so later edits do not alter pending feedback or retries.
 
 ## Run locally
 
@@ -49,7 +51,7 @@ Analysis is a single synchronous request. Navigation can continue during process
 
 Retries name the latest completed attempt for the same prompt or speech as their baseline, skipping interrupted, failed, and deleting attempts. Comparison uses its saved transcript, criterion evidence, filler counts, and speaking rate. Previous audio is not sent for comparison: pause placement, vocal expression, and other acoustic changes are not directly verified. Feedback links to the baseline recording so speakers can listen to both.
 
-If local practice cannot load, **Try opening again** retries without deleting data. A separately confirmed **Reset local practice** removes this app's recordings, feedback, preparation, saved goal, and coaching preferences from the device. Failed individual or bulk audio deletions stay visible in History with **Retry deletion**. Local deletion never removes copies already sent to AI providers; setup and Home explain the upload and retention boundary.
+If local practice cannot load, **Try opening again** retries without deleting data. A separately confirmed **Reset local practice** removes this app's recordings, feedback, preparation, saved goal, and coaching preferences from the device. Failed individual or bulk audio deletions stay visible in Previous sessions with **Retry deletion**. Local deletion never removes copies already sent to AI providers; setup and Settings explain the upload and retention boundary.
 
 ## AI service
 
