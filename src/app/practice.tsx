@@ -106,7 +106,7 @@ export default function Practice() {
               ? `${clockTime(max)} maximum`
               : "Start when you’re ready."}
         </Muted>
-        {recording && <RecordingVisualizer metering={metering} sampleTime={elapsed} />}
+        {recording && <RecordingVisualizer metering={metering} />}
         {recording && max - elapsed <= 15 && (
           <Text className="font-medium text-primary">
             Less than 15 seconds remaining.

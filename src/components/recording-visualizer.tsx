@@ -13,31 +13,32 @@ import { Muted } from "@/components/coach-ui";
 import { audioLevel } from "@/domain/audio-level";
 import { THEME } from "@/lib/theme";
 
-const BAR_COUNT = 25;
+// A shaped volume display, not frequency bins or samples from earlier moments.
+const PEAKS = [0.15, 0.27, 0.39, 0.24, 0.55, 0.82, 0.46, 0.64, 0.95, 0.6, 0.78, 1, 0.88, 1, 0.78, 0.6, 0.95, 0.64, 0.46, 0.82, 0.55, 0.24, 0.39, 0.27, 0.15];
 const HEIGHT = 56;
 
-function WaveBar({ history, index }: { history: SharedValue<number[]>; index: number }) {
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleY: withTiming((4 + history.get()[index] * (HEIGHT - 4)) / HEIGHT, {
-      duration: 160,
+function WaveBar({ level, peak }: { level: SharedValue<number>; peak: number }) {
+  const animatedStyle = useAnimatedStyle(() => {
+    const current = level.get();
+    const scale = (4 + current * peak * (HEIGHT - 4)) / HEIGHT;
+    return { transform: [{ scaleY: current === 0 ? 4 / HEIGHT : withTiming(scale, {
+      duration: 100,
       easing: Easing.out(Easing.quad),
       reduceMotion: ReduceMotion.System,
-    }) }],
-  }));
+    }) }] };
+  });
   return <Animated.View style={[styles.bar, animatedStyle]} />;
 }
 
-export function RecordingVisualizer({ metering, sampleTime }: {
+export function RecordingVisualizer({ metering }: {
   metering?: number;
-  sampleTime: number;
 }) {
   const reducedMotion = useReducedMotion();
   const level = audioLevel(metering);
-  const history = useSharedValue<number[]>(Array(BAR_COUNT).fill(0));
+  const currentLevel = useSharedValue(0);
   useEffect(() => {
-    if (level !== undefined && !reducedMotion)
-      history.set((previous) => [...previous.slice(1), level]);
-  }, [level, sampleTime, reducedMotion, history]);
+    currentLevel.set(level ?? 0);
+  }, [level, currentLevel]);
   const available = level !== undefined;
   return (
     <View style={styles.container}>
@@ -56,7 +57,7 @@ export function RecordingVisualizer({ metering, sampleTime }: {
                 backgroundColor: available && level > i / 12 ? THEME.light.primary : THEME.light.border,
               }]} />
             ))
-          ) : Array.from({ length: BAR_COUNT }, (_, i) => <WaveBar key={i} history={history} index={i} />)}
+          ) : PEAKS.map((peak, i) => <WaveBar key={i} level={currentLevel} peak={peak} />)}
         </View>
       </View>
       <Muted>{available ? "Live microphone level" : "Recording · audio level unavailable"}</Muted>

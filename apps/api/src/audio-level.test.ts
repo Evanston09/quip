@@ -5,9 +5,16 @@ import { audioLevel } from "../../../src/domain/audio-level.ts";
 test("microphone display stays flat for silence, scales with sound, and clamps overloads", () => {
   assert.equal(audioLevel(-160), 0);
   assert.equal(audioLevel(-60), 0);
+  assert.equal(audioLevel(-50), 0);
   assert.ok(audioLevel(-40)! < audioLevel(-20)!);
   assert.equal(audioLevel(-6), 1);
   assert.equal(audioLevel(5), 1);
+});
+
+test("quiet input immediately resets the level after a loud moment", () => {
+  const readings = [-50, -20, -6, -55, -50].map(audioLevel);
+  assert.deepEqual(readings.slice(-2), [0, 0]);
+  assert.equal(readings[2], 1);
 });
 
 test("missing and non-finite measurements remain unavailable instead of showing fake activity", () => {
