@@ -9,10 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/brand/quip-icon.png",
-      "bundleIdentifier": "com.evank.speaking"
+      "bundleIdentifier": "com.evank.quip"
     },
     "android": {
-      "package": "com.evank.speaking",
+      "package": "com.evank.quip",
       "adaptiveIcon": {
         "backgroundColor": "#347553",
         "foregroundImage": "./assets/brand/quip-adaptive-foreground.png",
