@@ -59,6 +59,10 @@ Gemini receives the recording itself through OpenRouter audio-input chat and ret
 
 Uploads are limited to 24 MB. A bundled FFprobe validates actual audio format and duration rather than trusting client claims, including packet timing when browser WebM duration metadata is absent. Accepted containers: M4A, WebM, WAV, MP3, OGG. Temporary audio is removed after validation; the service does not maintain a database or durable audio storage. Provider format support can still vary and is surfaced as a retryable analysis failure.
 
+If the bundled FFprobe cannot run on Apple Silicon, the API falls back to `ffprobe` on PATH (install with `brew install ffmpeg`). You can also set `FFPROBE_PATH` in `apps/api/.env` to a compatible executable. A missing audio tool is reported as a service problem and preserves the recording for retry.
+
+Question generation retries malformed AI output once and validates the result before displaying it. Exact JSON code fences are accepted without relaxing field validation. Rejected responses log only request metadata and validation paths, never the recording, transcript, or model output.
+
 OpenRouter's model listing currently advertises audio input and structured outputs for Gemini 2.5 Flash. Real end-to-end provider quality, filler fidelity, and format compatibility still need validation with actual recordings and your API key. OpenRouter/downstream retention depends on their current policies and account/provider settings; local deletion cannot delete provider-held copies. See [OpenRouter data collection](https://openrouter.ai/docs/guides/privacy/data-collection). No zero-retention promise is made.
 
 ## Checks

@@ -7,13 +7,34 @@ import ffprobe from "ffprobe-static";
 import { ServiceError } from "./provider.ts";
 
 export const MAX_BYTES = 24 * 1024 * 1024;
+const runProbe = promisify(execFile);
+async function probe(args: string[]) {
+  const options = { timeout: 15000, maxBuffer: 8 * 1024 * 1024 };
+  try {
+    return await runProbe(process.env.FFPROBE_PATH || ffprobe.path, args, options);
+  } catch (error) {
+    const failure = error as NodeJS.ErrnoException;
+    // ffprobe-static's Darwin arm64 artifact can actually contain an Intel binary.
+    // Use a locally installed native probe only when the bundled tool cannot launch.
+    if (!process.env.FFPROBE_PATH && process.platform === "darwin" && process.arch === "arm64" && failure.errno === -86) {
+      try {
+        return await runProbe("ffprobe", args, options);
+      } catch (fallbackError) {
+        error = fallbackError;
+      }
+    }
+    const launchFailure = error as NodeJS.ErrnoException;
+    if (["ENOENT", "EACCES", "ENOEXEC"].includes(launchFailure.code ?? "") || launchFailure.errno === -86)
+      throw new ServiceError(503, "AUDIO_TOOL_UNAVAILABLE", "The coach's audio service is unavailable. Your recording is safe; please try again later.", true);
+    throw error;
+  }
+}
 export async function inspectAudio(bytes: Uint8Array, maxSeconds: number) {
   const dir = await mkdtemp(join(tmpdir(), "speaking-"));
   try {
     const path = join(dir, "recording");
     await writeFile(path, bytes);
-    const { stdout } = await promisify(execFile)(
-      ffprobe.path,
+    const { stdout } = await probe(
       [
         "-v",
         "error",
@@ -26,7 +47,6 @@ export async function inspectAudio(bytes: Uint8Array, maxSeconds: number) {
         "json",
         path,
       ],
-      { timeout: 15000, maxBuffer: 8 * 1024 * 1024 },
     );
     const info = JSON.parse(stdout) as {
       format?: { duration?: string; format_name?: string };

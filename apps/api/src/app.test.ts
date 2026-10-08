@@ -129,6 +129,19 @@ test("measures actual uploaded duration and rejects over-cap and malformed audio
     (error) => (error as { status: number }).status === 422,
   );
 });
+test("a missing audio executable is a recoverable service error, not a bad recording", async () => {
+  const original = process.env.FFPROBE_PATH;
+  process.env.FFPROBE_PATH = "/missing-speaking-coach-ffprobe";
+  try {
+    await assert.rejects(inspectAudio(wav(2), 180), (error) => {
+      const failure = error as { status: number; code: string; retryable: boolean };
+      return failure.status === 503 && failure.code === "AUDIO_TOOL_UNAVAILABLE" && failure.retryable;
+    });
+  } finally {
+    if (original === undefined) delete process.env.FFPROBE_PATH;
+    else process.env.FFPROBE_PATH = original;
+  }
+});
 test("REST rejects invalid JSON/context and missing audio consistently", async () => {
   const bad = await post("/v1/prompts", { mode: "rehearse" });
   assert.equal(bad.status, 400);

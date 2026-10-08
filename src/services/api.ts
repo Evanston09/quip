@@ -1,5 +1,6 @@
 import { type Preferences } from "@/domain/preferences";
 import { Platform } from "react-native";
+import { File } from "expo-file-system";
 import {
   analysisSchema,
   analysisContext,
@@ -43,12 +44,13 @@ export async function analyze(
       await (await fetch(attempt.uri)).blob(),
       "recording.webm",
     );
-  else
-    form.append("audio", {
-      uri: attempt.uri,
-      name: "recording.m4a",
-      type: attempt.mimeType,
-    } as unknown as Blob);
+  else {
+    // SDK 57's global expo/fetch needs a File/Blob, not an RN URI descriptor.
+    const audio = new File(attempt.uri);
+    if (!audio.exists)
+      throw new ApiError("This recording is unavailable. Please start a new attempt.", undefined, false);
+    form.append("audio", audio, "recording.m4a");
+  }
   const validated = analysisSchema.safeParse(
     await request("/v1/analyses", form),
   );
