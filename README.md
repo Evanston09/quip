@@ -4,6 +4,10 @@ A mobile-first, audio-only English speaking coach built with Expo SDK 57, Expo R
 
 Choose **Impromptu** for scientific explanations, **Interview** for common behavioral questions, or **Rehearse** for your own outline and audience. Prepare, record, receive content and delivery feedback, choose a goal, and retry the same prompt with a comparison. History groups retries and separates score trends by mode.
 
+Unfinished preparation resumes through **Continue practice**, including retries with their original goal and deadline. Starting another practice asks before replacing unfinished preparation; reading old feedback never clears it. Leaving setup cancels pending prompt generation. Use **Use this goal next time** on feedback to save a goal across prompts and days; setup can omit it for one practice, and Home can clear it.
+
+On first launch, three optional questions choose a practice focus, English comfort, and feedback style (Encouraging, Balanced, or Direct). Skip is remembered; **Coaching preferences** on Home lets you edit later. The focus seeds a saved goal; comfort adjusts prompt and feedback wording without changing subject difficulty; style changes coaching tone without changing scoring standards. Preferences stay on this device and are included in AI requests when relevant. Each practice snapshots its coaching preferences, so later edits do not alter pending feedback or retries.
+
 ## Run locally
 
 Requires Node 22.13+ and pnpm. The Expo app stays at the repository root; the Hono service lives in `apps/api`.
@@ -25,15 +29,11 @@ pnpm start
 
 For web, use `pnpm web`. For a physical phone, set `EXPO_PUBLIC_API_URL` in the root `.env` to `http://<this-computer-LAN-IP>:8787`; connect both devices to the same network and restart Expo after environment changes. Local HTTP is for development only. Public hosting and cloud history are not configured.
 
-## Required sign-in
+## Device-only practice
 
-Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY` in the root `.env` using your project's URL and publishable key (a legacy anon key also works). Set the same values as `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in `apps/api/.env`. Never use secret/service-role keys in the app.
+Open the app and choose a practice mode; no account or sign-in is required. Recordings, feedback, and preparation are saved on this device, with no cloud history synchronization. Anyone using the same app installation or browser profile can access its history.
 
-In the Supabase dashboard, open **Authentication → Sign In / Providers → Email**, enable email/password and disable **Confirm email**. Account creation checks this setting first so it does not send verification emails. Email and password are the only login methods; there is no guest access, OAuth, or email recovery flow.
-
-Sign-in is mandatory for practice, history, and results, including direct links. Sessions persist in SecureStore on native and browser storage on web. Native token refresh follows app foreground/background state. Both AI endpoints validate the bearer token with Supabase Auth before processing a request. Use **Account → Sign out** to end this device's session; finish active recording first.
-
-Practice history remains local, separated by Supabase user ID. Signing into another account starts with that account's own data. Existing guest data is not imported. This auth-only change creates no application tables, RLS policies, backfills, or cloud synchronization.
+The local API accepts prompt and analysis requests without authentication. Only the API URL and backend OpenRouter settings are needed. Public deployment remains deferred.
 
 `expo-audio`, `expo-asset`, `expo-file-system`, and AsyncStorage were installed using `expo install` with SDK-compatible versions. A development build is needed when your Expo Go binary does not include the installed native modules. Microphone permission is configured through the Expo audio plugin, with background recording disabled. Native directories are generated, never maintained by hand. For future dependency additions at this workspace root, pass the pnpm workspace flag through Expo: `npx expo install <package> -- -w`.
 
@@ -42,6 +42,10 @@ Practice history remains local, separated by Supabase user ID. Signing into anot
 Preparation deadlines and prompts persist across restarts. Native recordings go directly to the app document directory. Web recordings persist as Blobs in IndexedDB; metadata and feedback use AsyncStorage. Finish and the three/five-minute caps save locally before automatic analysis. Leaving the app or a recoverable audio interruption preserves audio and offers Submit or Start over. Abrupt browser termination during recording may lose an unfinished browser recording; completed audio remains durable. Native startup attempts to recover an unfinished file.
 
 Analysis is a single synchronous request. Navigation can continue during processing. An unresolved request after restart becomes Needs retry. Retrying analysis updates the same attempt, so practice counts do not inflate. Deletion discards late analysis responses and removes comparisons that reference the deleted attempt.
+
+Retries name the latest completed attempt for the same prompt or speech as their baseline, skipping interrupted, failed, and deleting attempts. Comparison uses its saved transcript, criterion evidence, filler counts, and speaking rate. Previous audio is not sent for comparison: pause placement, vocal expression, and other acoustic changes are not directly verified. Feedback links to the baseline recording so speakers can listen to both.
+
+If local practice cannot load, **Try opening again** retries without deleting data. A separately confirmed **Reset local practice** removes this app's recordings, feedback, preparation, saved goal, and coaching preferences from the device. Failed individual or bulk audio deletions stay visible in History with **Retry deletion**. Local deletion never removes copies already sent to AI providers; setup and Home explain the upload and retention boundary.
 
 ## AI service
 
@@ -63,6 +67,6 @@ npx expo export --platform web
 npx expo-doctor
 ```
 
-API tests use isolated synthetic audio and provider stubs, never user-facing fixtures. They check scoring arithmetic, context validation, real audio duration limits, multipart integration, unconfigured service recovery, and rate-limit propagation.
+Regression tests use isolated synthetic audio, provider stubs, and local-state fixtures, never user-facing fixtures. They check scoring arithmetic, context validation, real audio duration limits, multipart integration, service recovery, rate-limit propagation, prompt cancellation, guarded preparation replacement, retry baselines, saved goals, corrupt metadata, and failed or cancelled persistence. `pnpm check` runs lint, app/API typechecks, and all regression tests.
 
 The product decisions and ADRs in `docs/` record the accepted architecture and the earlier documentation phase. Application and local backend implementation were subsequently authorized by the user. Public deployment remains deferred.

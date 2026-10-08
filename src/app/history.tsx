@@ -117,20 +117,22 @@ export default function History() {
             {attempts[0].session.prompt?.text ?? attempts[0].session.outline}
           </Text>
           {attempts.map((a, index) => (
+            <View key={a.id} className="gap-1">
             <Action
-              key={a.id}
               variant="outline"
               onPress={() =>
                 router.push({ pathname: "/results/[id]", params: { id: a.id } })
               }
-            >{`Attempt ${attempts.length - index} · ${a.status === "ready" ? `${a.analysis?.overallScore}/100` : a.status === "processing" ? "Processing" : a.status === "interrupted" ? "Interrupted" : "Needs retry"}`}</Action>
+            >{`Attempt ${attempts.length - index} · ${a.status === "ready" ? `${a.analysis?.overallScore}/100` : a.status === "processing" ? "Processing" : a.status === "interrupted" ? "Interrupted" : a.status === "deleting" ? "Retry deletion" : "Needs retry"}`}</Action>
+            {a.session.selectedGoal && <Muted>Practiced goal: {a.session.selectedGoal}</Muted>}
+            </View>
           ))}
         </Panel>
       ))}
-      {!recording && (state.attempts.length > 0 || state.session) && (
+      {!recording && (state.attempts.length > 0 || state.session || state.practiceGoal) && (
         <Confirm
           label="Delete all practice data"
-          message="Permanently delete every saved recording, feedback result, comparison, and preparation session from this device?"
+          message="Delete every saved recording, feedback result, comparison, preparation, and saved goal from this device? Copies already sent to AI providers are not deleted."
           onConfirm={clear}
         />
       )}

@@ -1,3 +1,4 @@
+import { type Preferences } from "@/domain/preferences";
 import {
   AudioModule,
   RecordingPresets,
@@ -16,11 +17,14 @@ import {
 } from "react";
 import { AppState, Platform } from "react-native";
 import { MODES, type Attempt, type Session } from "@/domain/practice";
+import { completeOnboarding, replacePreparation, withoutAttempt } from "@/domain/history";
 import { analyze, ApiError } from "@/services/api";
+import { commitState } from "@/services/state-write";
 import {
   loadState,
   preserveAudio,
   removeAudio,
+  resetState,
   saveState,
   type SavedState,
 } from "@/services/storage";
@@ -31,10 +35,16 @@ export function newId() {
 type PracticeContext = {
   state: SavedState;
   loaded: boolean;
+  loading: boolean;
+  loadError?: string;
   storageError?: string;
   recording: boolean;
   elapsed: number;
-  setSession: (session?: Session) => Promise<void>;
+  setSession: (session: Session, expectedPreparationId?: string, signal?: AbortSignal) => Promise<void>;
+  setPracticeGoal: (goal?: string) => Promise<void>;
+  savePreferences: (preferences?: Preferences) => Promise<void>;
+  reload: () => Promise<void>;
+  reset: () => Promise<void>;
   start: () => Promise<void>;
   finish: (interrupted?: boolean) => Promise<string | undefined>;
   submit: (id: string) => Promise<void>;
@@ -44,20 +54,21 @@ type PracticeContext = {
 const Context = createContext<PracticeContext | null>(null);
 export function PracticeProvider({
   children,
-  userId,
 }: {
   children: ReactNode;
-  userId?: string;
 }) {
   const [state, setState] = useState<SavedState>({ attempts: [] });
   const current = useRef(state);
   const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string>();
   const [storageError, setStorageError] = useState<string>();
   const [recording, setRecording] = useState(false);
   const active = useRef<SavedState["activeRecording"]>(undefined);
   const finishing = useRef(false);
   const starting = useRef(false);
   const pending = useRef(new Set<string>());
+  const mutations = useRef(Promise.resolve());
   const finishHandler = useRef<
     (interrupted?: boolean) => Promise<string | undefined>
   >(async () => undefined);
@@ -81,92 +92,108 @@ export function PracticeProvider({
   );
   const recorderState = useAudioRecorderState(recorder, 200);
   const update = useCallback(
-    async (next: SavedState) => {
-      if (!userId) throw new Error("Sign in to practice.");
-      current.current = next;
-      setState(next);
-      try {
-        await saveState(next, userId);
-        setStorageError(undefined);
-      } catch {
-        const message =
-          "Your device could not save practice data. Free up storage and try again.";
-        setStorageError(message);
-        throw new Error(message);
-      }
+    (change: (saved: SavedState) => SavedState, signal?: AbortSignal) => {
+      const task = mutations.current.catch(() => {}).then(async () => {
+        if (signal?.aborted) throw new Error("Practice setup cancelled.");
+        const next = change(current.current);
+        try {
+          await commitState(current, next, saveState, signal);
+          setState(next);
+          setStorageError(undefined);
+        } catch (error) {
+          if (signal?.aborted) throw error;
+          const message = "Your device could not save practice data. Free up storage and try again.";
+          setStorageError(message);
+          throw new Error(message);
+        }
+      });
+      mutations.current = task;
+      return task;
     },
-    [userId],
+    [],
   );
-  useEffect(() => {
-    if (!userId) return;
-    let alive = true;
-    loadState(userId)
-      .then(async (saved) => {
-        if (!alive) return;
-        current.current = saved;
-        setState(saved);
-        await saveState(saved, userId);
-        setLoaded(true);
-      })
-      .catch(() =>
-        setStorageError(
-          "Saved practice data could not be loaded. Restart the app; existing data has been kept.",
-        ),
-      );
-    return () => {
-      alive = false;
-    };
-  }, [userId]);
+  const reload = useCallback(async () => {
+    setLoading(true);
+    setLoadError(undefined);
+    try {
+      const saved = await loadState();
+      await saveState(saved);
+      current.current = saved;
+      setState(saved);
+      setStorageError(undefined);
+      setLoaded(true);
+    } catch {
+      setLoaded(false);
+      setLoadError("Your saved practice could not be opened. Your data has been kept. Try again, or reset local practice if the problem continues.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => { void reload(); }, [reload]);
+  const setSession = useCallback((session: Session, expectedPreparationId?: string, signal?: AbortSignal) =>
+    update((saved) => {
+      if (active.current || starting.current)
+        throw new Error("Finish your recording before starting another practice.");
+      return replacePreparation(saved, session, expectedPreparationId);
+    }, signal), [update]);
+  const reset = useCallback(async () => {
+    if (active.current || starting.current) throw new Error("Finish recording before resetting practice.");
+    await mutations.current.catch(() => {});
+    await resetState();
+    current.current = { attempts: [] };
+    setState(current.current);
+    setLoadError(undefined);
+    setStorageError(undefined);
+    setLoaded(true);
+  }, []);
   const submit = useCallback(
     async (id: string) => {
       if (pending.current.has(id)) return;
       const attempt = current.current.attempts.find((a) => a.id === id);
-      if (!attempt || attempt.status === "ready") return;
+      if (!attempt || attempt.status === "ready" || attempt.status === "deleting") return;
       if (attempt.retryAt && attempt.retryAt > Date.now())
         throw new Error(
           `Please wait ${Math.ceil((attempt.retryAt - Date.now()) / 1000)} seconds before retrying.`,
         );
       pending.current.add(id);
       try {
-        await update({
-          ...current.current,
-          attempts: current.current.attempts.map((a) =>
-            a.id === id ? { ...a, status: "processing", error: undefined } : a,
+        await update((saved) => ({
+          ...saved,
+          attempts: saved.attempts.map((a) =>
+            a.id === id && a.status !== "deleting" && a.status !== "ready" ? { ...a, status: "processing", error: undefined } : a,
           ),
-        });
+        }));
+        if (current.current.attempts.find((a) => a.id === id)?.status !== "processing") return;
         const previous = current.current.attempts.find(
           (a) => a.id === attempt.session.previousAttemptId,
         );
-        const analysis = await analyze(attempt, previous, userId);
-        if (!current.current.attempts.some((a) => a.id === id)) return;
-        if (
-          analysis.comparison &&
-          !current.current.attempts.some(
-            (a) => a.id === analysis.comparison!.previousAttemptId,
-          )
-        )
-          delete analysis.comparison;
-        await update({
-          ...current.current,
-          attempts: current.current.attempts.map((a) =>
-            a.id === id
-              ? {
-                  ...a,
-                  durationSeconds: analysis.statistics.durationSeconds,
-                  durationUnknown: false,
-                  analysis,
-                  status: "ready",
-                  error: undefined,
-                }
-              : a,
-          ),
+        const analysis = await analyze(attempt, previous);
+        if (current.current.attempts.find((a) => a.id === id)?.status !== "processing") return;
+        await update((saved) => {
+          if (analysis.comparison && !saved.attempts.some((a) => a.id === analysis.comparison!.previousAttemptId && a.status === "ready"))
+            delete analysis.comparison;
+          return {
+            ...saved,
+            attempts: saved.attempts.map((a) =>
+              a.id === id && a.status === "processing"
+                ? {
+                    ...a,
+                    durationSeconds: analysis.statistics.durationSeconds,
+                    durationUnknown: false,
+                    analysis,
+                    status: "ready",
+                    error: undefined,
+                  }
+                : a,
+            ),
+          };
         });
       } catch (error) {
-        if (current.current.attempts.some((a) => a.id === id))
-          await update({
-            ...current.current,
-            attempts: current.current.attempts.map((a) =>
-              a.id === id
+        if (current.current.attempts.find((a) => a.id === id)?.status === "processing")
+          await update((saved) => ({
+            ...saved,
+            attempts: saved.attempts.map((a) =>
+              a.id === id && a.status === "processing"
                 ? {
                     ...a,
                     status: "needs-retry",
@@ -181,12 +208,12 @@ export function PracticeProvider({
                   }
                 : a,
             ),
-          });
+          }));
       } finally {
         pending.current.delete(id);
       }
     },
-    [update, userId],
+    [update],
   );
   const finish = useCallback(
     async (interrupted = false): Promise<string | undefined> => {
@@ -219,14 +246,15 @@ export function PracticeProvider({
           createdAt: r.startedAt,
           status: interrupted ? "interrupted" : "needs-retry",
         };
-        await update({
-          ...current.current,
+        await update((saved) => ({
+          ...saved,
+          session: saved.session?.preparationId === r.session.preparationId ? undefined : saved.session,
           activeRecording: undefined,
           attempts: [
             attempt,
-            ...current.current.attempts.filter((a) => a.id !== attempt.id),
+            ...saved.attempts.filter((a) => a.id !== attempt.id),
           ],
-        });
+        }));
         active.current = undefined;
         setRecording(false);
         if (!interrupted)
@@ -272,7 +300,11 @@ export function PracticeProvider({
         uri: recorder.uri ?? "",
         startedAt: Date.now(),
       };
-      await update({ ...current.current, activeRecording: r });
+      await update((saved) => {
+        if (saved.session?.preparationId !== session.preparationId)
+          throw new Error("Your practice changed. Return to your preparation and try again.");
+        return { ...saved, activeRecording: r };
+      });
       recorderFinished.current = false;
       active.current = r;
       recorder.record({ forDuration: MODES[session.mode].maxSeconds });
@@ -280,7 +312,7 @@ export function PracticeProvider({
     } catch (error) {
       active.current = undefined;
       setRecording(false);
-      await update({ ...current.current, activeRecording: undefined });
+      await update((saved) => ({ ...saved, activeRecording: undefined }));
       throw error;
     } finally {
       starting.current = false;
@@ -312,40 +344,51 @@ export function PracticeProvider({
     async (id: string) => {
       const attempt = current.current.attempts.find((a) => a.id === id);
       if (!attempt) return;
-      await update({
-        ...current.current,
-        session:
-          current.current.session?.previousAttemptId === id
-            ? { ...current.current.session, previousAttemptId: undefined }
-            : current.current.session,
-        attempts: current.current.attempts
-          .filter((a) => a.id !== id)
-          .map((a) =>
-            a.analysis?.comparison?.previousAttemptId === id
-              ? { ...a, analysis: { ...a.analysis, comparison: undefined } }
-              : a,
-          ),
-      });
-      await removeAudio(attempt);
+      await update((saved) => ({
+        ...saved,
+        attempts: saved.attempts.map((a) => a.id === id ? { ...a, status: "deleting", error: undefined } : a),
+      }));
+      try {
+        await removeAudio(attempt);
+        await update((saved) => withoutAttempt(saved, id));
+      } catch {
+        const message = "This recording could not be fully removed from your device. Retry deletion.";
+        await update((saved) => ({
+          ...saved,
+          attempts: saved.attempts.map((a) => a.id === id ? { ...a, status: "deleting", error: message } : a),
+        }));
+        throw new Error(message);
+      }
     },
     [update],
   );
   const clear = useCallback(async () => {
-    if (active.current)
+    if (active.current || starting.current)
       throw new Error("Finish recording before deleting practice data.");
     const attempts = current.current.attempts;
-    await update({ attempts: [] });
-    await Promise.all(attempts.map(removeAudio));
-  }, [update]);
+    const results = await Promise.allSettled(attempts.map((a) => deleteAttempt(a.id)));
+    await update((saved) => ({ ...saved, session: undefined, practiceGoal: undefined }));
+    if (results.some((result) => result.status === "rejected"))
+      throw new Error("Some recordings could not be deleted. They remain in History so you can retry.");
+  }, [update, deleteAttempt]);
   return (
     <Context.Provider
       value={{
         state,
         loaded,
+        loading,
+        loadError,
         storageError,
         recording,
         elapsed: recorderState.durationMillis / 1000,
-        setSession: (session) => update({ ...current.current, session }),
+        setSession,
+        setPracticeGoal: (goal) => update((saved) => ({ ...saved, practiceGoal: goal })),
+        savePreferences: (preferences) => update((saved) => {
+          if (active.current || starting.current) throw new Error("Finish your recording before changing coaching preferences.");
+          return completeOnboarding(saved, preferences);
+        }),
+        reload,
+        reset,
         start,
         finish,
         submit,

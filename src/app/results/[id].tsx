@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { AudioPlayback } from "@/components/audio-playback";
 import {
@@ -14,13 +14,17 @@ import {
   Title,
 } from "@/components/coach-ui";
 import { FeedbackSection, Transcript } from "@/components/feedback-section";
+import { StartPracticeAction } from "@/components/start-practice-action";
 import { Text } from "@/components/ui/text";
-import { clockTime, MODES } from "@/domain/practice";
-import { usePractice } from "@/state/practice";
+import { clockTime, latestCompleted, MODES, retrySession } from "@/domain/practice";
+import { newId, usePractice } from "@/state/practice";
 
 export default function Results() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { state, submit, setSession, deleteAttempt, recording } = usePractice();
+  return <AttemptResults key={id} id={id} />;
+}
+function AttemptResults({ id }: { id: string }) {
+  const { state, submit, setSession, setPracticeGoal, deleteAttempt, recording } = usePractice();
   const attempt = state.attempts.find((a) => a.id === id);
   const [goal, setGoal] = useState<string>();
   const [error, setError] = useState("");
@@ -37,19 +41,16 @@ export default function Results() {
     }
   };
   const analysis = attempt?.analysis;
-  const retry = useCallback(async () => {
+  const baseline = attempt ? latestCompleted(state.attempts, attempt.session.id) : undefined;
+  const group = state.attempts.filter((a) => a.session.id === attempt?.session.id).sort((a, b) => a.createdAt - b.createdAt);
+  const attemptNumber = (attemptId: string) => group.findIndex((a) => a.id === attemptId) + 1;
+  const previous = state.attempts.find((a) => a.id === analysis?.comparison?.previousAttemptId && a.status === "ready");
+  const nextGoal = goal ?? analysis?.recommendedGoal;
+  const retry = async (expectedPreparationId?: string) => {
     if (!attempt) return;
-    await setSession({
-      ...attempt.session,
-      selectedGoal: goal ?? analysis?.recommendedGoal,
-      previousAttemptId: state.attempts.find(
-        (a) => a.session.id === attempt.session.id,
-      )?.id,
-      preparationDeadline:
-        Date.now() + (attempt.session.mode === "rehearse" ? 0 : 60000),
-    });
+    await setSession(retrySession(attempt, state.attempts, newId(), nextGoal), expectedPreparationId);
     router.replace("/practice");
-  }, [attempt, analysis, goal, setSession, state.attempts]);
+  };
   if (!attempt)
     return (
       <Screen title="Attempt unavailable">
@@ -71,9 +72,18 @@ export default function Results() {
           {attempt.session.prompt?.text ?? attempt.session.outline}
         </Text>
       </Panel>
-      {analysis ? (
+      {attempt.status === "deleting" ? (
+        <Panel>
+          <Title>Deletion needs to finish</Title>
+          <Muted>{attempt.error ?? "This attempt is marked for deletion. Retry to finish removing it from this device."}</Muted>
+          <Action disabled={busy} onPress={() => { void run(async () => {
+            await deleteAttempt(attempt.id);
+            router.replace("/history");
+          }); }}>Retry deletion</Action>
+        </Panel>
+      ) : analysis ? (
         <>
-          <KoalaMessage>
+          <KoalaMessage motion={analysis.seriousFactualMistakes.length ? "nod" : "celebrate"}>
             Okay, here’s what stood out.
           </KoalaMessage>
           <View className="items-center gap-2">
@@ -97,6 +107,12 @@ export default function Results() {
             </Panel>
           )}
           <Panel className="bg-secondary">
+            {attempt.session.selectedGoal && (
+              <>
+                <Label>Goal you practiced</Label>
+                <Text>{attempt.session.selectedGoal}</Text>
+              </>
+            )}
             <Label>Next practice goal</Label>
             <Text className="text-lg font-semibold leading-7">
               {goal ?? analysis.recommendedGoal}
@@ -118,10 +134,19 @@ export default function Results() {
                 ),
               )}
             </Expand>
+            <Action
+              variant="outline"
+              disabled={busy || recording || state.practiceGoal === nextGoal}
+              onPress={() => { void run(() => setPracticeGoal(nextGoal)); }}
+            >
+              {state.practiceGoal === nextGoal ? "Goal saved for future practice" : "Use this goal next time"}
+            </Action>
+            <Muted>Save it for new prompts and speeches, including another day.</Muted>
           </Panel>
-          {analysis.comparison && (
+          {analysis.comparison && previous && (
             <Panel>
-              <Label>Compared with your previous attempt</Label>
+              <Label>Compared with completed attempt {attemptNumber(previous.id)}</Label>
+              <Muted>{new Date(previous.createdAt).toLocaleString()}</Muted>
               <Text className="font-bold">
                 Content {analysis.comparison.contentChange >= 0 ? "+" : ""}
                 {analysis.comparison.contentChange} · Delivery{" "}
@@ -131,7 +156,16 @@ export default function Results() {
               <Text className="leading-6">
                 {analysis.comparison.commentary}
               </Text>
+              <Muted>
+                These are AI score differences. The coach used previous feedback, transcript, filler counts, and speaking rate, but did not hear the previous audio. Changes in pauses or vocal expression are not directly verified.
+              </Muted>
+              <Action variant="outline" onPress={() => router.push({ pathname: "/results/[id]", params: { id: previous.id } })}>
+                Open comparison recording
+              </Action>
             </Panel>
+          )}
+          {!analysis.comparison && attempt.session.previousAttemptId && (
+            <Muted>Comparison is unavailable because the baseline has no completed feedback or was deleted. Your current feedback is still saved.</Muted>
           )}
           <FeedbackSection title="Content" section={analysis.content} />
           <FeedbackSection title="Delivery" section={analysis.delivery} />
@@ -163,16 +197,16 @@ export default function Results() {
               </Muted>
             </Expand>
           </Panel>
-          <Action
+          <Muted>
+            {baseline ? `Your next retry will compare with completed attempt ${attemptNumber(baseline.id)} (${new Date(baseline.createdAt).toLocaleString()}).` : "Your next attempt will have no comparison until there is completed feedback for this prompt or speech."}
+          </Muted>
+          <StartPracticeAction
             disabled={recording || busy}
-            onPress={() => {
-              void run(retry);
-            }}
-          >
-            {attempt.session.mode === "rehearse"
+            onStart={(expected) => run(() => retry(expected))}
+            label={attempt.session.mode === "rehearse"
               ? "Retry speech"
               : "Retry this"}
-          </Action>
+          />
           {attempt.session.mode !== "rehearse" && (
             <Action
               variant="outline"
@@ -190,6 +224,9 @@ export default function Results() {
         </>
       ) : (
         <>
+          <KoalaMessage motion={attempt.status === "processing" ? "think" : "nod"}>
+            {attempt.status === "processing" ? "Let’s listen to what you recorded." : "Take your time. We can try again."}
+          </KoalaMessage>
           <Panel>
             {attempt.status === "processing" ? (
               <>
@@ -213,22 +250,15 @@ export default function Results() {
                     : (attempt.error ??
                       "Feedback is not available yet. Try analysis when you’re ready.")}
                 </Muted>
-                <Action
-                  disabled={busy || recording}
-                  onPress={() => {
-                    void run(
-                      attempt.retryable === false
-                        ? retry
-                        : () => submit(attempt.id),
-                    );
-                  }}
-                >
-                  {attempt.retryable === false
-                    ? "Record again"
-                    : attempt.status === "interrupted"
+                {attempt.retryable === false ? (
+                  <StartPracticeAction label="Record again" disabled={busy || recording} onStart={(expected) => run(() => retry(expected))} />
+                ) : (
+                  <Action disabled={busy || recording} onPress={() => { void run(() => submit(attempt.id)); }}>
+                    {attempt.status === "interrupted"
                       ? "Submit saved audio"
                       : "Retry analysis"}
-                </Action>
+                  </Action>
+                )}
               </>
             )}
           </Panel>
@@ -240,33 +270,28 @@ export default function Results() {
             />
           </Panel>
           {attempt.status === "interrupted" && (
-            <Action
-              variant="outline"
+            <StartPracticeAction
               disabled={busy || recording}
-              onPress={() => {
-                void run(retry);
-              }}
-            >
-              Start over
-            </Action>
+              onStart={(expected) => run(() => retry(expected))}
+              label="Start over"
+            />
+          )}
+          {(attempt.status === "interrupted" || attempt.retryable === false) && (
+            <Muted>{baseline ? `Starting again keeps completed attempt ${attemptNumber(baseline.id)} as the comparison baseline.` : "There is no completed feedback yet for comparison. Your saved audio will stay in History."}</Muted>
           )}
         </>
       )}
       {!!error && <Text className="text-destructive">{error}</Text>}
       <Action
         variant="secondary"
-        onPress={() => {
-          void run(async () => {
-            if (!recording) await setSession(undefined);
-            router.replace("/");
-          });
-        }}
+        onPress={() => router.replace("/")}
       >
         {attempt.status === "processing" ? "Return home" : "Finish"}
       </Action>
       <Confirm
         label="Delete this attempt"
-        message="Permanently remove this recording, feedback, and comparisons that reference it? Other attempts will stay."
+        disabled={busy}
+        message="Remove this recording, feedback, and comparisons that reference it from this device? Other attempts stay. Copies already sent to AI providers are not deleted."
         onConfirm={async () => {
           await deleteAttempt(attempt.id);
           router.replace("/history");

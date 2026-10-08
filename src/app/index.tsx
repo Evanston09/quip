@@ -1,12 +1,14 @@
+import { STYLES } from "@/domain/preferences";
 import { router } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { View } from "react-native";
 import {
   Action,
-  Expand,
   KoalaMessage,
   Muted,
+  Label,
+  Panel,
   Screen,
   Title,
 } from "@/components/coach-ui";
@@ -14,23 +16,20 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { MODES, type Mode } from "@/domain/practice";
 import { usePractice } from "@/state/practice";
+import { RecordingPrivacy } from "@/components/recording-privacy";
 
 export default function Home() {
-  const { state, recording } = usePractice();
+  const { state, recording, setPracticeGoal } = usePractice();
+  const [error, setError] = useState("");
   const [mode, setMode] = useState<Mode>("interview");
   const completed = state.attempts.filter(
     (a) => a.status === "ready" && a.analysis,
   );
   const recent = state.attempts[0];
-  const sessionAttempt = state.attempts.find(
-    (a) => a.session.id === state.session?.id,
-  );
-  const continueAttempt =
-    sessionAttempt ?? (!state.session ? recent : undefined);
   return (
     <Screen back={false}>
       <Title botanical>Choose a practice</Title>
-      <KoalaMessage>
+      <KoalaMessage motion={recording ? "listen" : "wave"}>
         {recording
           ? "Still recording. I’m all ears."
           : mode === "impromptu"
@@ -44,11 +43,11 @@ export default function Home() {
           variant="secondary"
           onPress={() =>
             router.push(
-              recording || !continueAttempt
+              recording || state.session
                 ? "/practice"
                 : {
                     pathname: "/results/[id]",
-                    params: { id: continueAttempt.id },
+                    params: { id: recent!.id },
                   },
             )
           }
@@ -60,6 +59,18 @@ export default function Home() {
               : "View latest feedback"}
         </Action>
       )}
+      {state.practiceGoal && (
+        <Panel>
+          <Label>Your saved practice goal</Label>
+          <Text>{state.practiceGoal}</Text>
+          <Muted>Available for your next prompt or speech, even after closing the app.</Muted>
+          <Action disabled={recording} variant="ghost" onPress={async () => {
+            try { await setPracticeGoal(undefined); setError(""); }
+            catch (e) { setError(e instanceof Error ? e.message : "Could not clear your goal."); }
+          }}>Clear saved goal</Action>
+        </Panel>
+      )}
+      {!!error && <Text className="text-destructive">{error}</Text>}
       <View
         className="gap-3"
         accessibilityRole="radiogroup"
@@ -116,12 +127,13 @@ export default function Home() {
           </Action>
         </View>
       )}
-      <Expand title="About your recordings">
-        <Muted>
-          Recordings and history are saved on this device. Audio is sent to
-          cloud AI for feedback. No account required.
-        </Muted>
-      </Expand>
+      <View className="gap-1 border-t border-border pt-4">
+        <Action variant="ghost" disabled={recording} onPress={() => router.push("./onboarding")}>
+          Coaching preferences
+        </Action>
+        <Muted>{state.preferences ? `${STYLES[state.preferences.feedbackStyle].label} feedback · Change your focus, comfort, or feedback style.` : "Choose your focus, English comfort, and feedback style."}</Muted>
+      </View>
+      <RecordingPrivacy />
     </Screen>
   );
 }

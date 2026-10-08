@@ -1,26 +1,20 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { File } from "expo-file-system";
+import { Directory, File, Paths } from "expo-file-system";
 import { Platform } from "react-native";
-import type { Attempt, Session } from "@/domain/practice";
+import type { Attempt } from "@/domain/practice";
+import { savedStateSchema } from "@/domain/history";
+import type { SavedState } from "@/domain/history";
+export type { SavedState } from "@/domain/history";
 
 const KEY = "speaking-coach:v1";
-export type SavedState = {
-  attempts: Attempt[];
-  session?: Session;
-  activeRecording?: {
-    id: string;
-    session: Session;
-    uri: string;
-    startedAt: number;
-  };
-};
 let writes = Promise.resolve();
-export async function loadState(userId: string): Promise<SavedState> {
-  const raw = await AsyncStorage.getItem(`${KEY}:${userId}`);
+export async function loadState(): Promise<SavedState> {
+  const raw = await AsyncStorage.getItem(KEY);
   if (!raw) return { attempts: [] };
-  const state = JSON.parse(raw) as SavedState;
-  if (!Array.isArray(state.attempts))
+  const parsed = savedStateSchema.safeParse(JSON.parse(raw));
+  if (!parsed.success)
     throw new Error("Saved practice data could not be read.");
+  const state = parsed.data;
   state.attempts = await Promise.all(
     state.attempts.map(async (a) => ({
       ...a,
@@ -45,17 +39,29 @@ export async function loadState(userId: string): Promise<SavedState> {
         durationUnknown: true,
         status: "interrupted",
       });
+    if (state.session?.preparationId === r.session.preparationId)
+      state.session = undefined;
   }
   delete state.activeRecording;
   return state;
 }
-export function saveState(state: SavedState, userId: string) {
+export function saveState(state: SavedState) {
   const serialized = JSON.stringify(state);
   const next = writes
     .catch(() => {})
-    .then(() => AsyncStorage.setItem(`${KEY}:${userId}`, serialized));
+    .then(() => AsyncStorage.setItem(KEY, serialized));
   writes = next;
   return next;
+}
+export async function resetState() {
+  // Remove the app's audio before forgetting metadata; a failure can be retried.
+  if (Platform.OS === "web") {
+    await webOperation("readwrite", (store) => store.clear());
+  } else {
+    const directory = new Directory(Paths.document, Platform.OS === "ios" ? "ExpoAudio" : "Audio");
+    if (directory.exists) directory.delete();
+  }
+  await saveState({ attempts: [] });
 }
 function database(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {

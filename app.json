@@ -43,8 +43,7 @@
           "enableBackgroundPlayback": false
         }
       ],
-      "expo-asset",
-      "expo-secure-store"
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

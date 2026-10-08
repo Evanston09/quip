@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { coachingPreferencesSchema } from "./preferences.ts";
 
 export const modeSchema = z.enum(["impromptu", "interview", "rehearse"]);
 export type Mode = z.infer<typeof modeSchema>;
@@ -31,8 +32,8 @@ export const coachingSchema = z.object({
   content: sectionSchema,
   delivery: sectionSchema,
   strength: z.string().min(1),
-  recommendedGoal: z.string().min(1),
-  alternativeGoals: z.array(z.string()).max(3),
+  recommendedGoal: z.string().min(1).max(1000),
+  alternativeGoals: z.array(z.string().min(1).max(1000)).max(3),
   seriousFactualMistakes: z.array(z.string()),
   fillers: z.array(
     z.object({
@@ -75,12 +76,16 @@ export const contextSchema = z
     outline: z.string().max(6000).optional(),
     audience: z.string().max(1000).optional(),
     selectedGoal: z.string().max(1000).optional(),
+    coachingPreferences: coachingPreferencesSchema.optional(),
     previousAttempt: z
       .object({
         id: z.string(),
         transcript: z.string().max(20000),
         contentScore: z.number().min(0).max(100),
         deliveryScore: z.number().min(0).max(100),
+        contentCriteria: z.array(criterionSchema).max(6),
+        deliveryCriteria: z.array(criterionSchema).max(5),
+        statistics: analysisSchema.shape.statistics,
       })
       .optional(),
   })
@@ -98,30 +103,35 @@ export const contextSchema = z
       });
   });
 export type AnalysisContext = z.infer<typeof contextSchema>;
-export type Session = {
-  id: string;
-  mode: Mode;
-  prompt?: Prompt;
-  outline?: string;
-  audience?: string;
-  preparationDeadline: number;
-  selectedGoal?: string;
-  previousAttemptId?: string;
-};
-export type Attempt = {
-  id: string;
-  session: Session;
-  uri: string;
-  mimeType: string;
-  createdAt: number;
-  durationSeconds: number;
-  durationUnknown?: boolean;
-  status: "processing" | "ready" | "needs-retry" | "interrupted";
-  analysis?: Analysis;
-  error?: string;
-  retryAt?: number;
-  retryable?: boolean;
-};
+export const sessionSchema = z.object({
+  id: z.string().min(1),
+  preparationId: z.string().min(1),
+  mode: modeSchema,
+  prompt: promptSchema.optional(),
+  outline: z.string().max(6000).optional(),
+  audience: z.string().max(1000).optional(),
+  preparationSeconds: z.number().int().min(0).max(300),
+  preparationDeadline: z.number().finite(),
+  selectedGoal: z.string().min(1).max(1000).optional(),
+  coachingPreferences: coachingPreferencesSchema.optional(),
+  previousAttemptId: z.string().optional(),
+});
+export type Session = z.infer<typeof sessionSchema>;
+export const attemptSchema = z.object({
+  id: z.string().min(1),
+  session: sessionSchema,
+  uri: z.string(),
+  mimeType: z.string(),
+  createdAt: z.number().finite(),
+  durationSeconds: z.number().nonnegative(),
+  durationUnknown: z.boolean().optional(),
+  status: z.enum(["processing", "ready", "needs-retry", "interrupted", "deleting"]),
+  analysis: analysisSchema.optional(),
+  error: z.string().optional(),
+  retryAt: z.number().finite().optional(),
+  retryable: z.boolean().optional(),
+});
+export type Attempt = z.infer<typeof attemptSchema>;
 export const MODES: Record<
   Mode,
   { label: string; description: string; maxSeconds: number; icon: string }
@@ -191,4 +201,49 @@ export function completeAnalysis(
 export function clockTime(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+export function latestCompleted(attempts: Attempt[], sessionId: string) {
+  return attempts
+    .filter((a) => a.session.id === sessionId && a.status === "ready" && a.analysis)
+    .sort((a, b) => b.createdAt - a.createdAt)[0];
+}
+export function retrySession(
+  attempt: Attempt,
+  attempts: Attempt[],
+  preparationId: string,
+  selectedGoal?: string,
+  now = Date.now(),
+): Session {
+  const previous = latestCompleted(attempts, attempt.session.id);
+  return {
+    ...attempt.session,
+    preparationId,
+    previousAttemptId: previous?.id,
+    selectedGoal: selectedGoal ?? attempt.session.selectedGoal ?? previous?.analysis?.recommendedGoal,
+    preparationDeadline: now + attempt.session.preparationSeconds * 1000,
+  };
+}
+export function analysisContext(attempt: Attempt, previous?: Attempt): AnalysisContext {
+  return {
+    attemptId: attempt.id,
+    mode: attempt.session.mode,
+    prompt: attempt.session.prompt,
+    outline: attempt.session.outline,
+    audience: attempt.session.audience,
+    selectedGoal: attempt.session.selectedGoal,
+    coachingPreferences: attempt.session.coachingPreferences,
+    ...(previous?.status === "ready" && previous.analysis && previous.session.id === attempt.session.id
+      ? {
+          previousAttempt: {
+            id: previous.id,
+            transcript: previous.analysis.transcript,
+            contentScore: previous.analysis.content.score,
+            deliveryScore: previous.analysis.delivery.score,
+            contentCriteria: previous.analysis.content.criteria,
+            deliveryCriteria: previous.analysis.delivery.criteria,
+            statistics: previous.analysis.statistics,
+          },
+        }
+      : {}),
+  };
 }

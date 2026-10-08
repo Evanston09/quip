@@ -1,7 +1,9 @@
-import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import { TextInput, View } from "react-native";
-import { Action, Label, Muted, Screen } from "@/components/coach-ui";
+import { Action, Label, Muted, Panel, Screen } from "@/components/coach-ui";
+import { StartPracticeAction } from "@/components/start-practice-action";
+import { RecordingPrivacy } from "@/components/recording-privacy";
 import { Text } from "@/components/ui/text";
 import { modeSchema, MODES, type Difficulty } from "@/domain/practice";
 import { generatePrompt } from "@/services/api";
@@ -10,23 +12,40 @@ import { newId, usePractice } from "@/state/practice";
 export default function Setup() {
   const params = useLocalSearchParams<{ mode: string }>();
   const mode = modeSchema.safeParse(params.mode).data ?? "interview";
-  const { setSession, recording } = usePractice();
+  const { state, setSession, recording } = usePractice();
+  const [useSavedGoal, setUseSavedGoal] = useState(true);
+  const request = useRef<AbortController | null>(null);
+  const focused = useRef(false);
   const [difficulty, setDifficulty] = useState<Difficulty>("beginner");
   const [preparation, setPreparation] = useState(60);
   const [outline, setOutline] = useState("");
   const [audience, setAudience] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const begin = async () => {
+  useFocusEffect(useCallback(() => {
+    focused.current = true;
+    setBusy(false);
+    return () => {
+      focused.current = false;
+      request.current?.abort();
+      request.current = null;
+    };
+  }, []));
+  const begin = async (expectedPreparationId?: string) => {
+    if (request.current || !focused.current) return;
+    const controller = new AbortController();
+    request.current = controller;
     setBusy(true);
     setError("");
     try {
       const prompt =
         mode === "rehearse"
           ? undefined
-          : await generatePrompt(mode, difficulty);
+          : await generatePrompt(mode, difficulty, controller.signal, state.preferences?.englishComfort);
+      if (controller.signal.aborted || !focused.current) return;
       await setSession({
         id: newId(),
+        preparationId: newId(),
         mode,
         prompt,
         ...(mode === "rehearse"
@@ -34,12 +53,22 @@ export default function Setup() {
           : {}),
         preparationDeadline:
           Date.now() + (mode === "rehearse" ? 0 : preparation * 1000),
-      });
-      router.replace("/practice");
+        preparationSeconds: mode === "rehearse" ? 0 : preparation,
+        selectedGoal: useSavedGoal ? state.practiceGoal : undefined,
+        coachingPreferences: state.preferences ? {
+          englishComfort: state.preferences.englishComfort,
+          feedbackStyle: state.preferences.feedbackStyle,
+        } : undefined,
+      }, expectedPreparationId, controller.signal);
+      if (!controller.signal.aborted && focused.current) router.replace("/practice");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Please try again.");
+      if (!controller.signal.aborted && focused.current)
+        setError(e instanceof Error ? e.message : "Please try again.");
     } finally {
-      setBusy(false);
+      if (request.current === controller) {
+        request.current = null;
+        if (focused.current) setBusy(false);
+      }
     }
   };
   return (
@@ -67,6 +96,16 @@ export default function Setup() {
             )}
           </View>
         </View>
+      )}
+      {state.practiceGoal && (
+        <Panel>
+          <Label>Saved practice goal</Label>
+          <Text>{state.practiceGoal}</Text>
+          <Action variant="outline" disabled={busy} onPress={() => setUseSavedGoal(!useSavedGoal)}>
+            {useSavedGoal ? "Practice without this goal" : "Use this goal"}
+          </Action>
+          <Muted>{useSavedGoal ? "This goal will guide your feedback." : "Your goal stays saved for another practice."}</Muted>
+        </Panel>
       )}
       {mode === "rehearse" && (
         <View className="gap-3">
@@ -119,25 +158,22 @@ export default function Setup() {
         </View>
       )}
       {!!error && <Text className="text-destructive">{error}</Text>}
-      <Action
+      <StartPracticeAction
         disabled={
           busy ||
           recording ||
           (mode === "rehearse" && (!outline.trim() || !audience.trim()))
         }
-        onPress={() => {
-          void begin();
-        }}
-      >
-        {busy
+        onStart={begin}
+        label={busy
           ? mode === "rehearse"
             ? "Opening recording…"
             : "Loading prompt…"
           : mode === "rehearse"
             ? "Continue to recording"
             : "Get my prompt"}
-      </Action>
-      <Muted>Audio is sent to AI for feedback.</Muted>
+      />
+      <RecordingPrivacy />
     </Screen>
   );
 }

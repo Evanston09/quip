@@ -12,10 +12,8 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { colorScheme } from "nativewind";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { PracticeProvider } from "@/state/practice";
-import { AuthProvider, useAuth } from "@/state/auth";
+import { PracticeProvider, usePractice } from "@/state/practice";
 import { THEME } from "@/lib/theme";
-import { ActivityIndicator, View } from "react-native";
 void SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -35,49 +33,38 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
+      <RootNavigator />
     </SafeAreaProvider>
   );
 }
 function RootNavigator() {
-  const { session, loading } = useAuth();
-  if (loading)
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator
-          color="#3D705B"
-          accessibilityLabel="Restoring sign-in"
-        />
-      </View>
-    );
   return (
-    <PracticeProvider
-      key={session?.user.id ?? "signed-out"}
-      userId={session?.user.id}
-    >
+    <PracticeProvider>
       <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: THEME.light.background },
-          animation: "slide_from_right",
-        }}
-      >
-        <Stack.Protected guard={!session}>
-          <Stack.Screen name="sign-in" />
-        </Stack.Protected>
-        <Stack.Protected guard={!!session}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="setup" />
-          <Stack.Screen name="practice" />
-          <Stack.Screen name="history" />
-          <Stack.Screen name="results/[id]" />
-          <Stack.Screen name="account" />
-        </Stack.Protected>
-      </Stack>
+      <PracticeNavigator />
       <PortalHost />
     </PracticeProvider>
+  );
+}
+
+function PracticeNavigator() {
+  const { loaded, state } = usePractice();
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: THEME.light.background },
+        animation: "slide_from_right",
+      }}
+    >
+      <Stack.Protected guard={!loaded || !!state.onboardingCompleted}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="setup" />
+        <Stack.Screen name="practice" />
+        <Stack.Screen name="history" />
+        <Stack.Screen name="results/[id]" />
+      </Stack.Protected>
+      <Stack.Screen name="onboarding" />
+    </Stack>
   );
 }

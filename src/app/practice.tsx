@@ -24,12 +24,16 @@ export default function Practice() {
     return () => clearInterval(timer);
   }, []);
   const wasRecording = useRef(recording);
+  const recordingSession = useRef(session?.id);
   const latest = state.attempts.find((a) => a.session.id === session?.id);
   useEffect(() => {
-    if (wasRecording.current && !recording && latest)
-      router.replace({ pathname: "/results/[id]", params: { id: latest.id } });
+    if (recording) recordingSession.current = session?.id;
+    if (wasRecording.current && !recording) {
+      const saved = state.attempts.find((a) => a.session.id === recordingSession.current);
+      if (saved) router.replace({ pathname: "/results/[id]", params: { id: saved.id } });
+    }
     wasRecording.current = recording;
-  }, [latest, recording]);
+  }, [state.attempts, session?.id, recording]);
   const act = async (stop: boolean) => {
     setBusy(true);
     setError("");

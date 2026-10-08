@@ -10,34 +10,13 @@ import {
 } from "../../../src/domain/practice.ts";
 
 const realFetch = globalThis.fetch;
-const originalSupabaseUrl = process.env.SUPABASE_URL;
-const originalSupabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-const authHeaders = { Authorization: "Bearer test-session" };
 beforeEach(() => {
-  process.env.SUPABASE_URL = "https://auth.test";
-  process.env.SUPABASE_PUBLISHABLE_KEY = "test-only";
-  globalThis.fetch = async (url, init) => {
-    if (String(url) === "https://auth.test/auth/v1/user") {
-      assert.equal(
-        new Headers(init?.headers).get("Authorization"),
-        authHeaders.Authorization,
-      );
-      return Response.json({
-        id: "test-user",
-        email: "test@example.com",
-        is_anonymous: false,
-      });
-    }
+  globalThis.fetch = async (url) => {
     throw new Error(`Unexpected network request: ${url}`);
   };
 });
 afterEach(() => {
   globalThis.fetch = realFetch;
-  if (originalSupabaseUrl) process.env.SUPABASE_URL = originalSupabaseUrl;
-  else delete process.env.SUPABASE_URL;
-  if (originalSupabaseKey)
-    process.env.SUPABASE_PUBLISHABLE_KEY = originalSupabaseKey;
-  else delete process.env.SUPABASE_PUBLISHABLE_KEY;
 });
 
 function wav(seconds: number) {
@@ -67,7 +46,7 @@ function wav(seconds: number) {
 const post = (path: string, data: unknown) =>
   app.request(path, {
     method: "POST",
-    headers: { ...authHeaders, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 const criterion = (name: string, score: number) => ({
@@ -102,6 +81,9 @@ test("averages criteria and equal sections, calculates comparisons and transcrip
       transcript: "Old speech",
       contentScore: 80,
       deliveryScore: 70,
+      contentCriteria: feedback.content.criteria,
+      deliveryCriteria: feedback.delivery.criteria,
+      statistics: { fillers: [], durationSeconds: 20, wordsPerMinute: 6 },
     },
   });
   const result = completeAnalysis(feedback, context, 30);
@@ -164,7 +146,6 @@ test("REST rejects invalid JSON/context and missing audio consistently", async (
   );
   const response = await app.request("/v1/analyses", {
     method: "POST",
-    headers: authHeaders,
     body,
   });
   assert.equal(response.status, 400);
@@ -185,10 +166,8 @@ test("provider rate limit and Retry-After reach the app", async () => {
   const old = process.env.OPENROUTER_API_KEY;
   const original = globalThis.fetch;
   process.env.OPENROUTER_API_KEY = "test-only";
-  globalThis.fetch = async (url, init) =>
-    String(url).startsWith("https://auth.test/")
-      ? original(url, init)
-      : new Response("{}", { status: 429, headers: { "Retry-After": "30" } });
+  globalThis.fetch = async () =>
+    new Response("{}", { status: 429, headers: { "Retry-After": "30" } });
   try {
     const response = await post("/v1/prompts", { mode: "interview" });
     assert.equal(response.status, 429);
@@ -229,13 +208,15 @@ test("full multipart analysis uses actual audio and computes scores server-side"
     },
   };
   globalThis.fetch = async (_url, init) => {
-    if (String(_url).startsWith("https://auth.test/"))
-      return original(_url, init);
     const request = JSON.parse(String(init?.body));
     assert.equal(request.model, "google/gemini-2.5-flash");
     assert.equal(request.messages[1].content[1].input_audio.format, "wav");
     assert.ok(request.messages[1].content[1].input_audio.data.length > 0);
     assert.equal(request.response_format.type, "json_schema");
+    const instruction = request.messages[1].content[0].text;
+    assert.match(instruction, /Use a direct tone/);
+    assert.match(instruction, /short sentences and everyday English/);
+    assert.match(instruction, /same scoring criteria and standards/);
     return Response.json({
       choices: [{ message: { content: JSON.stringify(coaching) } }],
     });
@@ -246,6 +227,7 @@ test("full multipart analysis uses actual audio and computes scores server-side"
       "context",
       JSON.stringify({
         attemptId: "recording-1",
+        coachingPreferences: { englishComfort: "learning", feedbackStyle: "direct" },
         mode: "rehearse",
         outline: "A point",
         audience: "Peers",
@@ -254,7 +236,6 @@ test("full multipart analysis uses actual audio and computes scores server-side"
     form.set("audio", new Blob([wav(2)], { type: "audio/wav" }), "speech.wav");
     const response = await app.request("/v1/analyses", {
       method: "POST",
-      headers: authHeaders,
       body: form,
     });
     const result = await response.json();
@@ -271,40 +252,38 @@ test("full multipart analysis uses actual audio and computes scores server-side"
   }
 });
 
-test("requires authentication before parsing prompts or uploaded recordings", async () => {
+test("generates a prompt without signing in", async () => {
+  const old = process.env.OPENROUTER_API_KEY;
+  process.env.OPENROUTER_API_KEY = "test-only";
   let calls = 0;
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (url, init) => {
     calls++;
-    throw new Error("Must not call a provider");
-  };
-  for (const path of ["/v1/prompts", "/v1/analyses"]) {
-    const response = await app.request(path, {
-      method: "POST",
-      body: "invalid",
+    const request = JSON.parse(String(init?.body));
+    assert.match(request.messages[1].content, /short, everyday English/);
+    assert.match(request.messages[1].content, /subject difficulty unchanged/);
+    assert.equal(String(url), "https://openrouter.ai/api/v1/chat/completions");
+    return Response.json({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              text: "Describe a time you learned from a mistake.",
+              audience: "Interviewer",
+            }),
+          },
+        },
+      ],
     });
-    assert.equal(response.status, 401);
-    assert.equal((await response.json()).error.code, "SIGN_IN_REQUIRED");
-  }
-  assert.equal(calls, 0);
-});
-
-test("rejects expired tokens and anonymous users", async () => {
-  for (const authResponse of [
-    new Response("{}", { status: 401 }),
-    Response.json({ id: "guest", is_anonymous: true }),
-  ]) {
-    globalThis.fetch = async () => authResponse;
-    const response = await post("/v1/prompts", { mode: "interview" });
-    assert.equal(response.status, 401);
-  }
-});
-
-test("fails closed when Supabase is unconfigured or unavailable", async () => {
-  delete process.env.SUPABASE_PUBLISHABLE_KEY;
-  assert.equal((await post("/v1/prompts", { mode: "interview" })).status, 503);
-  process.env.SUPABASE_PUBLISHABLE_KEY = "test-only";
-  globalThis.fetch = async () => {
-    throw new Error("offline");
   };
-  assert.equal((await post("/v1/prompts", { mode: "interview" })).status, 503);
+  try {
+    const response = await post("/v1/prompts", { mode: "interview", englishComfort: "learning" });
+    assert.equal(response.status, 200);
+    const { prompt } = await response.json();
+    assert.equal(prompt.mode, "interview");
+    assert.ok(prompt.id);
+    assert.equal(calls, 1);
+  } finally {
+    if (old) process.env.OPENROUTER_API_KEY = old;
+    else delete process.env.OPENROUTER_API_KEY;
+  }
 });

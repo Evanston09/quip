@@ -35,7 +35,8 @@ Working record of the product interview, not a completed implementation specific
 - Include roughly three concise, specific feedback points in each of the Content and Delivery sections, while preserving one main next-attempt goal. Favor useful, scannable feedback over lengthy commentary; do not pad with unsupported observations to meet a quota.
 - Recommend one improvement goal; speakers may select another from the feedback.
 - Offer Retry this, New prompt, and Finish for prompt-based modes; Retry speech and Finish for Rehearse.
-- Compare a retry with the immediately previous attempt on the same prompt or speech. Assess the selected goal as well as both score sections; improvement is not guaranteed.
+- Compare a retry with the latest completed attempt on the same prompt or speech, skipping attempts without completed feedback and those marked for deletion. Name that baseline before retry and in feedback. Assess the selected goal using saved criterion evidence, transcripts, and supported statistics; previous audio is unavailable, so do not claim verified improvement in pauses or vocal expression. Link to the baseline for listening; improvement is not guaranteed.
+- Speakers may save a coaching goal for new prompts and speeches across days, omit it for one practice, or clear it. Saved goals and each attempt's practiced goal remain local.
 - Preserve completed recordings when analysis fails and offer Retry analysis, without requiring another recording.
 - If OpenRouter is unavailable, preserving the recording and offering Retry analysis is sufficient for the demo. Do not fabricate results or add an offline AI fallback.
 - Each new recorded attempt with completed feedback counts as a practice, including retries of the same prompt. Reprocessing the same recording does not count twice. Group retries together in history.
@@ -52,7 +53,7 @@ Working record of the product interview, not a completed implementation specific
 - Cloud AI processing is accepted; see ADR 0001. Plan a Hono REST backend in this repository, with all AI requests routed through OpenRouter; see ADR 0002. Implementation is deferred.
 - Users may delete an individual attempt and its audio and feedback, or delete all practice data after confirmation. Remove deleted attempts from progress calculations and preserve other attempts on the prompt. Remove comparisons referencing deleted attempts.
 - Defer XP, levels, streaks, achievements, and separate vocabulary exercises. The Duolingo-inspired visual direction does not expand the MVP game mechanics.
-- Home offers three mode cards, a Continue practicing shortcut, and recent progress; all modes are available immediately.
+- Home offers three mode cards, a Continue practicing shortcut, and recent progress; all modes are available immediately. Continue resumes unfinished preparation before historical results. Replacing unfinished preparation requires an explicit choice; opening or leaving old feedback never discards ongoing preparation. Leaving setup cancels pending prompt generation.
 - Visual direction: playful, Duolingo-inspired, while still professional. The mascot is the original koala SVG, with no scarf and arms joined more closely to the shoulders. The user accepted the design with these revisions. Keep Speaking Coach as the working app name.
 - Show the koala on Home and Results only, never during recording.
 - Coaching is warm and direct, with short, kind, easy-to-skim feedback.
