@@ -1,5 +1,4 @@
 import { router } from "expo-router";
-import { useState } from "react";
 import { View } from "react-native";
 import {
   Action,
@@ -9,17 +8,14 @@ import {
   Screen,
 } from "@/components/coach-ui";
 import { Text } from "@/components/ui/text";
-import { MODES, type Mode } from "@/domain/practice";
+import { MODES } from "@/domain/practice";
+import { PracticeProgress } from "@/components/practice-progress";
 import { usePractice } from "@/state/practice";
 export default function History() {
   const { state } = usePractice();
-  const [mode, setMode] = useState<Mode>("interview");
   const completed = state.attempts.filter(
     (a) => a.status === "ready" && a.analysis,
   );
-  const trend = completed
-    .filter((a) => a.session.mode === mode)
-    .sort((a, b) => a.createdAt - b.createdAt);
   const groups = new Map<string, typeof state.attempts>();
   for (const a of state.attempts)
     groups.set(a.session.id, [...(groups.get(a.session.id) ?? []), a]);
@@ -39,73 +35,10 @@ export default function History() {
         {completed.length}{" "}
         {completed.length === 1 ? "completed practice" : "completed practices"}
       </Muted>
-      <Label>Score trends by mode</Label>
-      <View className="flex-row flex-wrap gap-2">
-        {(Object.keys(MODES) as Mode[]).map((m) => (
-          <Action
-            key={m}
-            variant={mode === m ? "default" : "outline"}
-            onPress={() => setMode(m)}
-          >
-            {MODES[m].label}
-          </Action>
-        ))}
-      </View>
-      <Panel>
-        {trend.length === 0 ? (
-          <Muted>
-            Complete a {MODES[mode].label.toLowerCase()} practice to see your
-            content and delivery scores here.
-          </Muted>
-        ) : (
-          <>
-            {trend.slice(-10).map((a, i) => (
-              <View key={a.id} className="gap-2">
-                <Text className="text-sm font-semibold">
-                  {new Date(a.createdAt).toLocaleDateString()}
-                  {a.session.prompt?.difficulty
-                    ? ` · ${a.session.prompt.difficulty}`
-                    : ""}
-                </Text>
-                <View className="flex-row items-center gap-2">
-                  <Text className="w-16 text-xs">Content</Text>
-                  <View className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
-                    <View
-                      style={{ width: `${a.analysis!.content.score}%` }}
-                      className="h-2 rounded-full bg-primary"
-                    />
-                  </View>
-                  <Text className="w-8 text-sm">
-                    {a.analysis!.content.score}
-                  </Text>
-                </View>
-                <View className="flex-row items-center gap-2">
-                  <Text className="w-16 text-xs">Delivery</Text>
-                  <View className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
-                    <View
-                      style={{
-                        width: `${a.analysis!.delivery.score}%`,
-                        backgroundColor: "#7995A6",
-                      }}
-                      className="h-2 rounded-full"
-                    />
-                  </View>
-                  <Text className="w-8 text-sm">
-                    {a.analysis!.delivery.score}
-                  </Text>
-                </View>
-                {i !== trend.slice(-10).length - 1 && (
-                  <View className="my-1 h-px bg-border" />
-                )}
-              </View>
-            ))}
-            <Muted>
-              Last 10 practices. Use retries of the same prompt for direct
-              comparisons.
-            </Muted>
-          </>
-        )}
-      </Panel>
+      <PracticeProgress
+        attempts={state.attempts}
+        onOpen={(id) => router.push({ pathname: "/results/[id]", params: { id } })}
+      />
       <Label>Your practice history</Label>
       {[...groups.entries()].map(([id, attempts]) => (
         <Panel key={id}>

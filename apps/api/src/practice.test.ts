@@ -5,6 +5,7 @@ import {
   type Attempt, type Coaching, type Session,
 } from "../../../src/domain/practice.ts";
 import { replacePreparation, savedStateSchema, withoutAttempt } from "../../../src/domain/history.ts";
+import { practiceProgress } from "../../../src/domain/progress.ts";
 
 const session: Session = {
   id: "speech", preparationId: "first-preparation", mode: "rehearse",
@@ -27,6 +28,35 @@ function attempt(id: string, createdAt: number, status: Attempt["status"] = "rea
     }), 10) } : {}),
   };
 }
+
+test("progress uses only completed feedback in the selected mode, sorted without mutating history", () => {
+  const first = attempt("first", 10);
+  const latest = attempt("latest", 30);
+  const otherMode = { ...attempt("interview", 20), session: { ...session, mode: "interview" as const } };
+  const history = [latest, attempt("failed", 40, "needs-retry"), otherMode,
+    attempt("processing", 50, "processing"), first, attempt("deleted", 60, "deleting"),
+    attempt("interrupted", 70, "interrupted"), { ...attempt("missing", 80), analysis: undefined }];
+  const original = [...history];
+  const progress = practiceProgress(history, "rehearse");
+  assert.equal(progress.total, 2);
+  assert.deepEqual(progress.points.map((point) => point.id), ["first", "latest"]);
+  assert.equal(progress.points[1].content, latest.analysis!.content.score);
+  assert.equal(progress.points[1].delivery, latest.analysis!.delivery.score);
+  assert.deepEqual(history, original);
+  assert.deepEqual(practiceProgress(history, "interview").points.map((point) => point.id), ["interview"]);
+  assert.deepEqual(practiceProgress(history, "impromptu"), { total: 0, points: [] });
+});
+
+test("progress shows the latest twelve real attempts and never invents a baseline", () => {
+  const history = Array.from({ length: 15 }, (_, index) => attempt(`attempt-${index}`, index));
+  const progress = practiceProgress(history, "rehearse");
+  assert.equal(progress.total, 15);
+  assert.equal(progress.points.length, 12);
+  assert.equal(progress.points[0].id, "attempt-3");
+  assert.equal(progress.points[11].id, "attempt-14");
+  assert.equal(practiceProgress([history[0]], "rehearse").points.length, 1);
+  assert.equal(practiceProgress([], "rehearse").points.length, 0);
+});
 
 test("preparation cannot be silently replaced, including by stale requests", () => {
   const saved = { attempts: [], session };
