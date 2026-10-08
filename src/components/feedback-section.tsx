@@ -13,7 +13,7 @@ export function FeedbackSection({
     <Panel>
       <View className="flex-row items-center justify-between">
         <Label>{title}</Label>
-        <Text className="text-2xl font-extrabold">
+        <Text className="text-2xl font-extrabold text-secondary-foreground">
           {section.score}
           <Text className="text-sm text-muted-foreground"> / 100</Text>
         </Text>

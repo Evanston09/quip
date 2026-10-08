@@ -34,8 +34,9 @@ export default function Settings() {
           </View>
         ) : <Muted>Choose your practice focus, English comfort, and feedback style.</Muted>}
         <Action variant="outline" disabled={recording} onPress={() => router.push("/onboarding")}>
-          {preferences ? "Edit coaching preferences" : "Choose coaching preferences"}
+          Run onboarding again
         </Action>
+        <Muted>Revisit the three setup questions to update your coaching preferences.</Muted>
       </Panel>
       {state.practiceGoal && (
         <Panel>

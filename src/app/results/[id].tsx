@@ -91,7 +91,9 @@ function AttemptResults({ id }: { id: string }) {
               : "You showed up and practiced. Let’s find one small thing to build on."}
           </KoalaMessage>
           <View className="items-center gap-2">
-            <Title>{analysis.overallScore} / 100</Title>
+            <Text accessibilityRole="header" className="text-2xl font-bold tracking-tight text-secondary-foreground">
+              {analysis.overallScore} / 100
+            </Text>
             <Muted>Overall score</Muted>
           </View>
           <Panel>
@@ -111,13 +113,13 @@ function AttemptResults({ id }: { id: string }) {
             </Panel>
           )}
           <Panel className="bg-secondary">
-            {attempt.session.selectedGoal && (
+            {attempt.session.selectedGoal && attempt.session.selectedGoal !== nextGoal && (
               <>
                 <Label>Goal you practiced</Label>
                 <Text>{attempt.session.selectedGoal}</Text>
               </>
             )}
-            <Label>Speaking goal</Label>
+            <Label>Goal for next practice</Label>
             <Text className="text-lg font-semibold leading-7">
               {nextGoal}
             </Text>
@@ -296,6 +298,7 @@ function AttemptResults({ id }: { id: string }) {
       </Action>
       <Confirm
         label="Delete this attempt"
+        variant="destructive"
         disabled={busy}
         message="Remove this recording, feedback, and comparisons that reference it from this device? Other attempts stay. Copies already sent to AI providers are not deleted."
         onConfirm={async () => {
