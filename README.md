@@ -29,6 +29,8 @@ pnpm start
 
 For web, use `pnpm web`. For a physical phone, set `EXPO_PUBLIC_API_URL` in the root `.env` to `http://<this-computer-LAN-IP>:8787`; connect both devices to the same network and restart Expo after environment changes. Local HTTP is for development only. Public hosting and cloud history are not configured.
 
+For the iOS Simulator, keep `pnpm api` running and run `pnpm ios` in another terminal to build and install the app. SDK 57 scene lifecycle support is enabled through `expo-build-properties` so builds using Xcode 27 can launch. If you previously built without this setting, stop Metro, run `pnpm exec expo prebuild --platform ios --clean`, then `pnpm ios`. The clean prebuild regenerates the generated `ios/` directory from app config; do not maintain native edits there. Restarting Metro alone does not update the installed native app.
+
 ## Device-only practice
 
 Open the app and choose a practice mode; no account or sign-in is required. Recordings, feedback, and preparation are saved on this device, with no cloud history synchronization. Anyone using the same app installation or browser profile can access its history.
