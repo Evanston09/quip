@@ -40,6 +40,7 @@ type PracticeContext = {
   storageError?: string;
   recording: boolean;
   elapsed: number;
+  metering?: number;
   setSession: (session: Session, expectedPreparationId?: string, signal?: AbortSignal) => Promise<void>;
   setPracticeGoal: (goal?: string) => Promise<void>;
   savePreferences: (preferences?: Preferences) => Promise<void>;
@@ -74,7 +75,7 @@ export function PracticeProvider({
   >(async () => undefined);
   const recorderFinished = useRef(false);
   const recorder = useAudioRecorder(
-    { ...RecordingPresets.HIGH_QUALITY, directory: "document" },
+    { ...RecordingPresets.HIGH_QUALITY, directory: "document", isMeteringEnabled: true },
     (status) => {
       if (!active.current || finishing.current) return;
       if (
@@ -381,6 +382,7 @@ export function PracticeProvider({
         storageError,
         recording,
         elapsed: recorderState.durationMillis / 1000,
+        metering: recording && recorderState.isRecording ? recorderState.metering : undefined,
         setSession,
         setPracticeGoal: (goal) => update((saved) => ({ ...saved, practiceGoal: goal })),
         savePreferences: (preferences) => update((saved) => {

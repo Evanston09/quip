@@ -43,6 +43,8 @@ The local API accepts prompt and analysis requests without authentication. Only 
 
 Preparation deadlines and prompts persist across restarts. Native recordings go directly to the app document directory. Web recordings persist as Blobs in IndexedDB; metadata and feedback use AsyncStorage. Finish and the three/five-minute caps save locally before automatic analysis. Leaving the app or a recoverable audio interruption preserves audio and offers Submit or Start over. Abrupt browser termination during recording may lose an unfinished browser recording; completed audio remains durable. Native startup attempts to recover an unfinished file.
 
+While recording, a live visualizer shows recent microphone levels using the recorder's metering on iOS, Android, and web. Silence stays flat; unavailable measurements are labeled rather than animated. Reduce Motion uses fixed level segments. Metering is temporary and does not add another microphone stream or affect feedback scores.
+
 Analysis is a single synchronous request. Navigation can continue during processing. An unresolved request after restart becomes Needs retry. Retrying analysis updates the same attempt, so practice counts do not inflate. Deletion discards late analysis responses and removes comparisons that reference the deleted attempt.
 
 Retries name the latest completed attempt for the same prompt or speech as their baseline, skipping interrupted, failed, and deleting attempts. Comparison uses its saved transcript, criterion evidence, filler counts, and speaking rate. Previous audio is not sent for comparison: pause placement, vocal expression, and other acoustic changes are not directly verified. Feedback links to the baseline recording so speakers can listen to both.

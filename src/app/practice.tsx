@@ -12,9 +12,10 @@ import {
 import { Text } from "@/components/ui/text";
 import { clockTime, MODES } from "@/domain/practice";
 import { usePractice } from "@/state/practice";
+import { RecordingVisualizer } from "@/components/recording-visualizer";
 
 export default function Practice() {
-  const { state, recording, elapsed, start, finish } = usePractice();
+  const { state, recording, elapsed, metering, start, finish } = usePractice();
   const session = state.session;
   const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState(false);
@@ -105,6 +106,7 @@ export default function Practice() {
               ? `${clockTime(max)} maximum`
               : "Start when you’re ready."}
         </Muted>
+        {recording && <RecordingVisualizer metering={metering} sampleTime={elapsed} />}
         {recording && max - elapsed <= 15 && (
           <Text className="font-medium text-primary">
             Less than 15 seconds remaining.
